@@ -2,8 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
-import { InputMessage, RegisterResponse } from './messages';
+import { InputMessage, RegisterResponse, UpdateRoomEvent } from './messages';
 import { StateManager } from './state-manager';
+import { AppState } from './app.state';
 
 
 export const httpServer = http.createServer(function (req, res) {
@@ -28,15 +29,13 @@ try {
   const stateManager = new StateManager();
   wsServer.on('connection', (ws) => {
     const userId = userCount++;
-
+    let userName: string | undefined;
     stateManager.subscribe((event, state) => {
       console.log('App state updated', event, state)
-      if (event.type === 'room_created') {
-        sendMessage({
-          type: 'update_room',
-          data: []
-        }, ws);
+      if (event.type === 'room_created' || event.type === 'user_registered') {
+        sendMessage(listRooms(state), ws);
       }
+
     })
 
     console.log('Connection recieved ', userId)
@@ -46,9 +45,14 @@ try {
     });
     wsStream.on('data', (data: string) => {
       console.log(data);
-      const dataObj: InputMessage = JSON.parse(data);
+      const dataObj: InputMessage = deserializeMessage(data);
       console.log(dataObj)
       if (dataObj.type === 'reg') {
+        stateManager.executeCommand({
+          type: 'reg_user',
+          userId: userId,
+          name: dataObj.data.name,
+        })
         const registerResponse: RegisterResponse = {
           type: 'reg',
           data: {
@@ -59,6 +63,7 @@ try {
           },
           id: 0
         }
+        userName = dataObj.data.name;
         ws.send(serializeMessage(registerResponse))
       }
       if (dataObj.type === 'create_room') {
@@ -96,3 +101,28 @@ function serializeMessage<T extends { data: any, type: string }>(obj: T) {
   copy.data = jsonString;
   return JSON.stringify(copy);
 }
+
+function deserializeMessage<T>(input: string): T {
+  let obj = JSON.parse(input);
+  if (obj.data)
+    obj.data = JSON.parse(obj.data);
+  return obj;
+}
+
+function listRooms(state: AppState): UpdateRoomEvent {
+  return {
+    type: 'update_room',
+    id: 0,
+    data: state.rooms.map((val, i) => {
+      const user = state.users.find(x => x.id === val.player1)!;
+      return {
+        roomId: i,
+        roomUsers: [{
+          index: user.id,
+          name: user.name
+        }]
+      }
+    })
+  }
+}
+

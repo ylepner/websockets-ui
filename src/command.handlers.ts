@@ -30,4 +30,12 @@ const createRoomHandler = createCommandHandler('create_room', (command, state) =
   }
 });
 
-export const commandHandlers = [createRoomHandler];
+const registerUserCommand = createCommandHandler('reg_user', (command, state) => {
+  return {
+    type: 'user_registered',
+    id: command.userId,
+    name: command.name
+  }
+})
+
+export const commandHandlers = [createRoomHandler, registerUserCommand];

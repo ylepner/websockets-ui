@@ -20,4 +20,14 @@ const roomCreatedHandler = createEventHandler('room_created', (event, state) => 
   }
 })
 
-export const eventHandlers = [roomCreatedHandler];
+const userRegisteredHandler = createEventHandler('user_registered', (event, state) => {
+  return {
+    ...state,
+    users: [...state.users, {
+      id: event.id,
+      name: event.name
+    }]
+  }
+})
+
+export const eventHandlers = [roomCreatedHandler, userRegisteredHandler];

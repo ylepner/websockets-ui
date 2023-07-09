@@ -33,6 +33,18 @@ export interface createNewRoomRequest {
   id: 0,
 }
 
+export interface UpdateRoomEvent {
+  type: 'update_room';
+  data: {
+    roomId: number;
+    roomUsers: {
+      name: string;
+      index: number;
+    }[]
+  }[];
+  id: 0;
+}
+
 
 export type InputMessage = RegisterRequest | SinglePlayRequest | CreateRoomRequest | AddUserToRoomRequest;
 

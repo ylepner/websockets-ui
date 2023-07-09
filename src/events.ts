@@ -5,5 +5,11 @@ export interface RoomCreated {
   ownerId: UserId;
 }
 
-export type AppEvent = RoomCreated;
+export interface UserRegistered {
+  type: 'user_registered';
+  name: string;
+  id: UserId;
+}
+
+export type AppEvent = RoomCreated | UserRegistered;
 export type AppEventType = AppEvent['type'];

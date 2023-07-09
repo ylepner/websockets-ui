@@ -1,5 +1,7 @@
+
 export interface AppState {
-  rooms: Room[]
+  users: User[];
+  rooms: Room[];
 }
 export type UserId = number;
 

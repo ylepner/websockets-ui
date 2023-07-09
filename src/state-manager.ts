@@ -6,13 +6,14 @@ import { AppEvent } from "./events";
 
 export class StateManager {
   appState: AppState = {
-    rooms: []
+    rooms: [],
+    users: []
   };
 
-  commandHandlers = commandHandlers;
-  eventHandlers = eventHandlers;
+  private commandHandlers = commandHandlers;
+  private eventHandlers = eventHandlers;
 
-  subscribers: Array<(event: AppEvent, state: AppState) => void> = [];
+  private subscribers: Array<(event: AppEvent, state: AppState) => void> = [];
 
   executeCommand(command: AppCommand) {
     const event = commandHandlers.find(x => x.name === command.type)?.handler(command, this.appState);
@@ -20,12 +21,19 @@ export class StateManager {
       console.error('Cannot find command handler for command', command);
       return;
     }
-    const nextState = eventHandlers.find(x => x.eventType === event.type)?.handler(event, this.appState);
+    const nextState = eventHandlers.find(x => x.eventType === event.type)?.handler(event as any, this.appState);
     if (!nextState) {
       console.error('Event handler is not found for command, event', command, event);
       return;
     }
+
+    console.log('Prev state: ', this.appState);
+    console.log(`Executed command: ${command.type}, event: ${event.type}`)
+    console.log('Next state: ', nextState);
+
+
     this.appState = nextState;
+
     this.subscribers.forEach(sub => sub(event, this.appState));
   }
 
