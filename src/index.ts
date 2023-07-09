@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import { WebSocketServer, createWebSocketStream } from 'ws';
+import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
 import { InputMessage, RegisterResponse } from './messages';
+import { StateManager } from './state-manager';
 
 
 export const httpServer = http.createServer(function (req, res) {
@@ -19,10 +20,26 @@ export const httpServer = http.createServer(function (req, res) {
   });
 });
 
+let userCount = 0;
+
 try {
   const WEBSOCKET_PORT = Number(process.env.WEBSOCKET_PORT) || 3000;
   const wsServer = new WebSocketServer({ port: WEBSOCKET_PORT });
+  const stateManager = new StateManager();
   wsServer.on('connection', (ws) => {
+    const userId = userCount++;
+
+    stateManager.subscribe((event, state) => {
+      console.log('App state updated', event, state)
+      if (event.type === 'room_created') {
+        sendMessage({
+          type: 'update_room',
+          data: []
+        }, ws);
+      }
+    })
+
+    console.log('Connection recieved ', userId)
     const wsStream = createWebSocketStream(ws, {
       encoding: 'utf8',
       decodeStrings: false,
@@ -36,13 +53,19 @@ try {
           type: 'reg',
           data: {
             name: dataObj.data.name,
-            index: 1,
+            index: userCount,
             error: false,
             errorText: ''
           },
           id: 0
         }
         ws.send(serializeMessage(registerResponse))
+      }
+      if (dataObj.type === 'create_room') {
+        stateManager.executeCommand({
+          type: 'create_room',
+          userId: userId
+        })
       }
     });
     wsStream.on('error', (err) => {
@@ -59,7 +82,12 @@ try {
   console.log(`Server websocket err `, e);
 }
 
-function serializeMessage(obj: { data: any }) {
+function sendMessage<T extends { data: any, type: string }>(msg: T, ws: WebSocket) {
+  console.log('Sending message', msg);
+  ws.send(serializeMessage(msg));
+}
+
+function serializeMessage<T extends { data: any, type: string }>(obj: T) {
   const copy: any = {
     ...obj,
   }
