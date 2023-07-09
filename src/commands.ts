@@ -1,7 +1,7 @@
 import { UserId } from "./app.state";
 
 interface ExecutedBy {
-  userId: UserId;
+  executedBy: UserId;
 }
 type RegisterUser = {
   type: 'reg_user';
@@ -12,6 +12,7 @@ type CreateRoom = {
 }
 type AddUserToRoom = {
   type: 'add_user_to_room';
+  roomId: number;
 }
 
 export type AppCommand = (CreateRoom | AddUserToRoom | RegisterUser) & ExecutedBy;

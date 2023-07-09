@@ -11,5 +11,11 @@ export interface UserRegistered {
   id: UserId;
 }
 
-export type AppEvent = RoomCreated | UserRegistered;
+export interface UserAddedToRoom {
+  type: 'user_added_to_room';
+  roomId: number;
+  userId: UserId;
+}
+
+export type AppEvent = RoomCreated | UserRegistered | UserAddedToRoom;
 export type AppEventType = AppEvent['type'];

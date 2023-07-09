@@ -35,9 +35,7 @@ try {
       if (event.type === 'room_created' || event.type === 'user_registered') {
         sendMessage(listRooms(state), ws);
       }
-
     })
-
     console.log('Connection recieved ', userId)
     const wsStream = createWebSocketStream(ws, {
       encoding: 'utf8',
@@ -50,7 +48,7 @@ try {
       if (dataObj.type === 'reg') {
         stateManager.executeCommand({
           type: 'reg_user',
-          userId: userId,
+          executedBy: userId,
           name: dataObj.data.name,
         })
         const registerResponse: RegisterResponse = {
@@ -69,7 +67,14 @@ try {
       if (dataObj.type === 'create_room') {
         stateManager.executeCommand({
           type: 'create_room',
-          userId: userId
+          executedBy: userId
+        })
+      }
+      if (dataObj.type === 'add_user_to_room') {
+        stateManager.executeCommand({
+          type: 'add_user_to_room',
+          roomId: dataObj.data.indexRoom,
+          executedBy: userId
         })
       }
     });

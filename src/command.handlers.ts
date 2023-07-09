@@ -1,3 +1,4 @@
+import { create } from 'domain';
 import { AppState, UserId } from './app.state';
 import { AppCommand, AppCommandName } from './commands';
 import { FindByType } from './common';
@@ -21,20 +22,28 @@ function createCommandHandler<T extends AppCommandName>(name: T, handler: (comma
 }
 
 const createRoomHandler = createCommandHandler('create_room', (command, state) => {
-  if (state.rooms.find(x => x.player1 === command.userId && x.player2 === command.userId)) {
+  if (state.rooms.find(x => x.player1 === command.executedBy && x.player2 === command.executedBy)) {
     throw new ValidationError('player already joined room or game');
   }
   return {
     type: 'room_created',
-    ownerId: command.userId
+    ownerId: command.executedBy
   }
 });
 
 const registerUserCommand = createCommandHandler('reg_user', (command, state) => {
   return {
     type: 'user_registered',
-    id: command.userId,
+    id: command.executedBy,
     name: command.name
+  }
+})
+
+const addUserToRoom = createCommandHandler('add_user_to_room', (command, state) => {
+  return {
+    type: 'user_added_to_room',
+    roomId: command.roomId,
+    userId: command.executedBy
   }
 })
 

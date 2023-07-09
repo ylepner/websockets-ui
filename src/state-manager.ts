@@ -10,9 +10,6 @@ export class StateManager {
     users: []
   };
 
-  private commandHandlers = commandHandlers;
-  private eventHandlers = eventHandlers;
-
   private subscribers: Array<(event: AppEvent, state: AppState) => void> = [];
 
   executeCommand(command: AppCommand) {
