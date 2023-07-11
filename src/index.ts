@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
-import { AddShipsRequest, CreateGameResponse, InputMessage, RegisterResponse, StartGameResponse, UpdateRoomEvent } from './messages';
+import { AddShipsRequest, CreateGameResponse, InputMessage, RegisterResponse, StartGameResponse, TurnResponse, UpdateRoomEvent } from './messages';
 import { StateManager } from './state-manager';
 import { AppState } from './app.state';
 
@@ -63,9 +63,8 @@ try {
       decodeStrings: false,
     });
     wsStream.on('data', (data: string) => {
-      console.log(data);
       const dataObj: InputMessage = deserializeMessage(data);
-      console.log(dataObj)
+      console.log(`Data received: ${JSON.stringify(dataObj)}`)
       if (dataObj.type === 'reg') {
         stateManager.publishEvent({
           type: 'user_registered',
@@ -103,14 +102,25 @@ try {
         const startGame: StartGameResponse = {
           type: 'start_game',
           data: {
-            ships: res.data.ships,
+            ships: [{ "position": { "x": 4, "y": 2 }, "direction": false, "type": "huge", "length": 4 }, { "position": { "x": 0, "y": 2 }, "direction": false, "type": "large", "length": 3 }, { "position": { "x": 3, "y": 6 }, "direction": true, "type": "large", "length": 3 }, { "position": { "x": 7, "y": 4 }, "direction": false, "type": "medium", "length": 2 }, { "position": { "x": 1, "y": 4 }, "direction": true, "type": "medium", "length": 2 }, { "position": { "x": 7, "y": 7 }, "direction": true, "type": "medium", "length": 2 }, { "position": { "x": 4, "y": 0 }, "direction": true, "type": "small", "length": 1 }, { "position": { "x": 0, "y": 9 }, "direction": false, "type": "small", "length": 1 }, { "position": { "x": 2, "y": 0 }, "direction": true, "type": "small", "length": 1 }, { "position": { "x": 4, "y": 4 }, "direction": true, "type": "small", "length": 1 }],
             currentIndexPlayer: 0
           },
           id: 0
         }
-        // ws.send(serializeMessage(startGame))
-        // with 'start game' should be send turn id
+        console.log(startGame)
         console.log(`Ships position of user ${res.data.indexPlayer} ${JSON.stringify(res.data.ships)}`)
+        // ws.send(serializeMessage(startGame))
+
+        // with 'start game' should be send turn id
+        const turn: TurnResponse = {
+          type: 'turn',
+          data: {
+            currentPlayer: 0
+          },
+          id: 0
+        }
+        ws.send(serializeMessage(turn));
+
       }
     });
     wsStream.on('error', (err) => {
@@ -155,11 +165,9 @@ function listRooms(state: AppState): UpdateRoomEvent {
     id: 0,
     data: state.rooms.map((val, i) => {
       const player1 = state.users.find(x => x.id === val.player1)!;
-      const player2 = state.users.find(x => x.id === val.player2);
       return {
         roomId: val.id,
-        roomUsers: [player1, player2]
-          .filter(p => !!p)
+        roomUsers: [player1]
           .map(p => ({
             index: p!.id,
             name: p!.name

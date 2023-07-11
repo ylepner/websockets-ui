@@ -34,21 +34,26 @@ const userRegisteredHandler = createEventHandler('user_registered', (event, stat
     }]
   }
 })
-
+let roomCounter = 0;
 const addUserToRoomHandler = createEventHandler('user_added_to_room', (event, state) => {
   const rooms = [...state.rooms];
-  const roomIndex = rooms.findIndex((room) => room.id === event.roomId);
-  if (roomIndex < 0) {
+
+  const room = rooms.find((room) => room.id === event.roomId);
+  if (!room) {
     throw new ValidationError(`Room with id ${event.roomId} is not found`);
   }
-  rooms[roomIndex] = {
-    ...rooms[roomIndex],
-    player2: event.userId,
-    game: {},
-  }
+  const roomId = roomCounter++;
   return {
     ...state,
-    rooms: rooms
+    games: {
+      ...state.games,
+      [roomId]: {
+        id: roomId,
+        player1: room.player1,
+        player2: event.userId,
+      }
+    },
+    rooms: rooms.filter((el) => el !== room),
   }
 })
 

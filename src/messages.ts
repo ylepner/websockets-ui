@@ -100,3 +100,12 @@ export interface StartGameResponse {
   },
   id: 0,
 }
+
+export interface TurnResponse {
+  type: 'turn',
+  data:
+  {
+    currentPlayer: number,
+  },
+  id: 0,
+}

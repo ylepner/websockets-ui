@@ -5,7 +5,8 @@ import { AppEvent } from "./events";
 export class StateManager {
   appState: AppState = {
     rooms: [],
-    users: []
+    users: [],
+    games: {}
   };
 
   private subscribers: Array<(event: AppEvent, state: AppState) => void> = [];
