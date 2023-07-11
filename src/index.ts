@@ -31,16 +31,20 @@ try {
     const userId = userCount++;
     let userName: string | undefined;
     let gameId: GameId | undefined;
+
+
+    console.log('Connection received ', userId)
+
     stateManager.subscribe((event, state) => {
       console.log('App state updated', event, state)
       if (event.type === 'room_created' || event.type === 'user_registered') {
-        const updatedRoomList = listRooms(state);
-        sendMessage(updatedRoomList, ws);
+        const updatedRoomList = listRooms(state, userId);
+        sendMessage(updatedRoomList, ws, userId);
       }
       if (event.type === 'user_added_to_room') {
-        const updatedRoomList = listRooms(state);
+        const updatedRoomList = listRooms(state, userId);
         const game = Object.values(state.games)[0];
-        const players = [game.player1, game.player2];
+        const players = Object.keys(game.players).map(Number)
         if (players.includes(userId)) {
           const createGame: CreateGameResponse = {
             type: 'create_game',
@@ -56,7 +60,7 @@ try {
         sendMessage(updatedRoomList, ws);
       }
     })
-    console.log('Connection received ', userId)
+
     const wsStream = createWebSocketStream(ws, {
       encoding: 'utf8',
       decodeStrings: false,
@@ -81,7 +85,7 @@ try {
           id: 0
         }
         userName = dataObj.data.name;
-        ws.send(serializeMessage(registerResponse))
+        ws.send(serializeMessage(registerResponse));
       }
       if (dataObj.type === 'create_room') {
         stateManager.publishEvent({
@@ -106,19 +110,7 @@ try {
           gameId: gameId,
           userId: userId,
           ships: dataObj.data.ships,
-        })
-        // ws.send(serializeMessage(startGame))
-
-        // with 'start game' should be send turn id
-        const turn: TurnResponse = {
-          type: 'turn',
-          data: {
-            currentPlayer: 0
-          },
-          id: 0
-        }
-        ws.send(serializeMessage(turn));
-
+        });
       }
     });
     wsStream.on('error', (err) => {
@@ -135,8 +127,8 @@ try {
   console.log(`Server websocket err `, e);
 }
 
-function sendMessage<T extends { data: any, type: string }>(msg: T, ws: WebSocket) {
-  console.log('Sending message', msg);
+function sendMessage<T extends { data: any, type: string }>(msg: T, ws: WebSocket, userId?: number) {
+  console.log(`Sending message userId: ${userId}`, msg);
   ws.send(serializeMessage(msg));
 }
 
@@ -157,7 +149,7 @@ function deserializeMessage<T>(input: string): T {
   return obj;
 }
 
-function listRooms(state: AppState): UpdateRoomEvent {
+function listRooms(state: AppState, userId: number): UpdateRoomEvent {
   return {
     type: 'update_room',
     id: 0,

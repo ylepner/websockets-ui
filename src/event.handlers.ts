@@ -49,8 +49,11 @@ const addUserToRoomHandler = createEventHandler('user_added_to_room', (event, st
       ...state.games,
       [roomId]: {
         id: roomId,
-        player1: room.player1,
-        player2: event.userId,
+        ownerId: room.player1,
+        players: {
+          [room.player1]: {},
+          [event.userId]: {}
+        }
       }
     },
     rooms: rooms.filter((el) => el !== room),
@@ -58,7 +61,22 @@ const addUserToRoomHandler = createEventHandler('user_added_to_room', (event, st
 })
 
 const shipsAdded = createEventHandler('ships_added', (event, state) => {
-  return state;
+  const ships = event.ships;
+  return {
+    ...state,
+    games: {
+      ...state.games,
+      [event.gameId]: {
+        ...state.games[event.gameId],
+        players: {
+          ...state.games[event.gameId],
+          [event.userId]: {
+            ships: ships
+          }
+        }
+      }
+    }
+  }
 })
 
-export const eventHandlers = [roomCreatedHandler, userRegisteredHandler, addUserToRoomHandler];
+export const eventHandlers = [roomCreatedHandler, userRegisteredHandler, addUserToRoomHandler, shipsAdded];

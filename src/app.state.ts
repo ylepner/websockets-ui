@@ -13,12 +13,18 @@ interface Room {
   id: number;
 }
 
-interface Game {
+export interface Game {
   id: GameId;
-  player1: UserId;
-  player2: UserId;
-  player1Ships?: Ship[];
-  player2Ships?: Ship[];
+  ownerId: UserId;
+  players: Record<UserId, GameField>;
+  // player1: UserId;
+  // player2: UserId;
+  // player1Ships?: Ship[];
+  // player2Ships?: Ship[];
+}
+
+export interface GameField {
+  ships?: Ship[]
 }
 
 export interface User {
