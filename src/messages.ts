@@ -109,3 +109,9 @@ export interface TurnResponse {
   },
   id: 0,
 }
+
+export type EventResponse = RegisterResponse
+  | CreateGameResponse
+  | StartGameResponse
+  | TurnResponse
+  | UpdateRoomEvent;
