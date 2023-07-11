@@ -9,13 +9,14 @@ interface Room {
   player1: number;
   player2?: number;
   game?: Game;
+  id: number;
 }
 
 interface Game {
 
 }
 
-interface User {
+export interface User {
   name: string;
   id: number;
 }

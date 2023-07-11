@@ -1,4 +1,4 @@
-import { UserId } from "./app.state";
+import { User, UserId } from "./app.state";
 
 export interface RoomCreated {
   type: 'room_created';
@@ -17,5 +17,11 @@ export interface UserAddedToRoom {
   userId: UserId;
 }
 
-export type AppEvent = RoomCreated | UserRegistered | UserAddedToRoom;
+export interface RoomUpdated {
+  type: 'room_updated';
+  roomId: number;
+  users: User[];
+}
+
+export type AppEvent = RoomCreated | UserRegistered | UserAddedToRoom | RoomUpdated;
 export type AppEventType = AppEvent['type'];

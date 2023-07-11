@@ -33,10 +33,19 @@ try {
     stateManager.subscribe((event, state) => {
       console.log('App state updated', event, state)
       if (event.type === 'room_created' || event.type === 'user_registered') {
-        sendMessage(listRooms(state), ws);
+        const updatedRoomList = listRooms(state);
+        sendMessage(updatedRoomList, ws);
+        ws.send(serializeMessage(updatedRoomList))
+      }
+      if (event.type === 'user_added_to_room') {
+        const updatedRoomList = listRooms(state);
+        sendMessage(updatedRoomList, ws);
+        ws.send(serializeMessage(updatedRoomList))
+        // if user is added to room the room should be deleted
+        console.log(`users in room:${JSON.stringify(state.users)}`)
       }
     })
-    console.log('Connection recieved ', userId)
+    console.log('Connection received ', userId)
     const wsStream = createWebSocketStream(ws, {
       encoding: 'utf8',
       decodeStrings: false,
@@ -46,9 +55,9 @@ try {
       const dataObj: InputMessage = deserializeMessage(data);
       console.log(dataObj)
       if (dataObj.type === 'reg') {
-        stateManager.executeCommand({
-          type: 'reg_user',
-          executedBy: userId,
+        stateManager.publishEvent({
+          type: 'user_registered',
+          id: userId,
           name: dataObj.data.name,
         })
         const registerResponse: RegisterResponse = {
@@ -65,16 +74,16 @@ try {
         ws.send(serializeMessage(registerResponse))
       }
       if (dataObj.type === 'create_room') {
-        stateManager.executeCommand({
-          type: 'create_room',
-          executedBy: userId
+        stateManager.publishEvent({
+          type: 'room_created',
+          ownerId: userId
         })
       }
       if (dataObj.type === 'add_user_to_room') {
-        stateManager.executeCommand({
-          type: 'add_user_to_room',
+        stateManager.publishEvent({
+          type: 'user_added_to_room',
           roomId: dataObj.data.indexRoom,
-          executedBy: userId
+          userId: userId
         })
       }
     });
@@ -86,7 +95,7 @@ try {
     console.error(err)
     console.log(`Websocket server closed`)
   });
-  console.log(`Start websocket server on the ${WEBSOCKET_PORT} port!`);
+  console.log(`Start websocket server on the ${WEBSOCKET_PORT} port`);
 } catch (e) {
   console.error(e)
   console.log(`Server websocket err `, e);
@@ -119,13 +128,16 @@ function listRooms(state: AppState): UpdateRoomEvent {
     type: 'update_room',
     id: 0,
     data: state.rooms.map((val, i) => {
-      const user = state.users.find(x => x.id === val.player1)!;
+      const player1 = state.users.find(x => x.id === val.player1)!;
+      const player2 = state.users.find(x => x.id === val.player2);
       return {
-        roomId: i,
-        roomUsers: [{
-          index: user.id,
-          name: user.name
-        }]
+        roomId: val.id,
+        roomUsers: [player1, player2]
+          .filter(p => !!p)
+          .map(p => ({
+            index: p!.id,
+            name: p!.name
+          }))
       }
     })
   }
