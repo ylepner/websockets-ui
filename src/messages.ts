@@ -58,7 +58,7 @@ export interface AddShipsRequest {
   id: 0,
 }
 
-interface Ship {
+export interface Ship {
   position: {
     x: number,
     y: number,

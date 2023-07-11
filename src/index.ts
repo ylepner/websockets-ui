@@ -4,7 +4,7 @@ import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
 import { AddShipsRequest, CreateGameResponse, InputMessage, RegisterResponse, StartGameResponse, TurnResponse, UpdateRoomEvent } from './messages';
 import { StateManager } from './state-manager';
-import { AppState } from './app.state';
+import { AppState, GameId } from './app.state';
 
 
 export const httpServer = http.createServer(function (req, res) {
@@ -30,6 +30,7 @@ try {
   wsServer.on('connection', (ws) => {
     const userId = userCount++;
     let userName: string | undefined;
+    let gameId: GameId | undefined;
     stateManager.subscribe((event, state) => {
       console.log('App state updated', event, state)
       if (event.type === 'room_created' || event.type === 'user_registered') {
@@ -37,22 +38,20 @@ try {
         sendMessage(updatedRoomList, ws);
       }
       if (event.type === 'user_added_to_room') {
-        // if user is added to the room the room should be deleted
         const updatedRoomList = listRooms(state);
-        if (updatedRoomList.data[0].roomUsers.length > 1) {
-          updatedRoomList.data[0].roomUsers = [];
-          stateManager.publishEvent({
-            type: 'room_updated'
-          })
+        const game = Object.values(state.games)[0];
+        const players = [game.player1, game.player2];
+        if (players.includes(userId)) {
           const createGame: CreateGameResponse = {
             type: 'create_game',
             data: {
-              idGame: 0,
-              idPlayer: 0
+              idGame: game.id,
+              idPlayer: players.filter((player) => player !== userId)[0]
             },
             id: 0
           }
           ws.send(serializeMessage((createGame)))
+          gameId = game.id;
         }
         sendMessage(updatedRoomList, ws);
       }
@@ -97,18 +96,17 @@ try {
           userId: userId
         })
       }
-      if (dataObj.type = 'add_ships') {
-        const res = dataObj as AddShipsRequest
-        const startGame: StartGameResponse = {
-          type: 'start_game',
-          data: {
-            ships: [{ "position": { "x": 4, "y": 2 }, "direction": false, "type": "huge", "length": 4 }, { "position": { "x": 0, "y": 2 }, "direction": false, "type": "large", "length": 3 }, { "position": { "x": 3, "y": 6 }, "direction": true, "type": "large", "length": 3 }, { "position": { "x": 7, "y": 4 }, "direction": false, "type": "medium", "length": 2 }, { "position": { "x": 1, "y": 4 }, "direction": true, "type": "medium", "length": 2 }, { "position": { "x": 7, "y": 7 }, "direction": true, "type": "medium", "length": 2 }, { "position": { "x": 4, "y": 0 }, "direction": true, "type": "small", "length": 1 }, { "position": { "x": 0, "y": 9 }, "direction": false, "type": "small", "length": 1 }, { "position": { "x": 2, "y": 0 }, "direction": true, "type": "small", "length": 1 }, { "position": { "x": 4, "y": 4 }, "direction": true, "type": "small", "length": 1 }],
-            currentIndexPlayer: 0
-          },
-          id: 0
+      if (dataObj.type === 'add_ships') {
+        if (gameId == null) {
+          console.error(`Game with ${userId} does not exist`);
+          return
         }
-        console.log(startGame)
-        console.log(`Ships position of user ${res.data.indexPlayer} ${JSON.stringify(res.data.ships)}`)
+        stateManager.publishEvent({
+          type: 'ships_added',
+          gameId: gameId,
+          userId: userId,
+          ships: dataObj.data.ships,
+        })
         // ws.send(serializeMessage(startGame))
 
         // with 'start game' should be send turn id

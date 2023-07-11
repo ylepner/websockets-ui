@@ -1,4 +1,6 @@
-type GameId = number
+import { Ship } from "./messages";
+
+export type GameId = number
 export interface AppState {
   users: User[];
   rooms: Room[];
@@ -15,6 +17,8 @@ interface Game {
   id: GameId;
   player1: UserId;
   player2: UserId;
+  player1Ships?: Ship[];
+  player2Ships?: Ship[];
 }
 
 export interface User {

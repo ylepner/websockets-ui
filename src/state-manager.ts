@@ -9,7 +9,7 @@ export class StateManager {
     games: {}
   };
 
-  private subscribers: Array<(event: AppEvent, state: AppState) => void> = [];
+  private subscribers: Array<(event: AppEvent, state: AppState, oldState: AppState) => void> = [];
 
   publishEvent(event: AppEvent) {
 
@@ -32,13 +32,13 @@ export class StateManager {
 
     console.log(`Executed event: ${event.type}`)
     console.log('Next state: ', nextState);
-
+    const oldState = this.appState;
     this.appState = nextState;
 
-    this.subscribers.forEach(sub => sub(event, this.appState));
+    this.subscribers.forEach(sub => sub(event, this.appState, oldState));
   }
 
-  subscribe(fn: (event: AppEvent, state: AppState) => void) {
+  subscribe(fn: (event: AppEvent, state: AppState, oldState: AppState) => void) {
     this.subscribers.push(fn);
   }
 }

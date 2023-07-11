@@ -35,9 +35,9 @@ const userRegisteredHandler = createEventHandler('user_registered', (event, stat
   }
 })
 let roomCounter = 0;
+
 const addUserToRoomHandler = createEventHandler('user_added_to_room', (event, state) => {
   const rooms = [...state.rooms];
-
   const room = rooms.find((room) => room.id === event.roomId);
   if (!room) {
     throw new ValidationError(`Room with id ${event.roomId} is not found`);
@@ -57,12 +57,8 @@ const addUserToRoomHandler = createEventHandler('user_added_to_room', (event, st
   }
 })
 
-const roomUpdatedHandler = createEventHandler('room_updated', (event, state) => {
-  const rooms = state.rooms;
-  return {
-    ...state,
-    rooms: rooms
-  }
+const shipsAdded = createEventHandler('ships_added', (event, state) => {
+  return state;
 })
 
 export const eventHandlers = [roomCreatedHandler, userRegisteredHandler, addUserToRoomHandler];
