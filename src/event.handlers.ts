@@ -52,4 +52,12 @@ const addUserToRoomHandler = createEventHandler('user_added_to_room', (event, st
   }
 })
 
+const roomUpdatedHandler = createEventHandler('room_updated', (event, state) => {
+  const rooms = state.rooms;
+  return {
+    ...state,
+    rooms: rooms
+  }
+})
+
 export const eventHandlers = [roomCreatedHandler, userRegisteredHandler, addUserToRoomHandler];

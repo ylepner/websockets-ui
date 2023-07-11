@@ -1,3 +1,5 @@
+import { RoomCreated, RoomUpdated } from "./events";
+
 export interface RegisterRequest {
   type: 'reg';
   data: {
@@ -45,8 +47,29 @@ export interface UpdateRoomEvent {
   id: 0;
 }
 
+export interface AddShipsRequest {
+  type: 'add_ships',
+  data:
+  {
+    gameId: number,
+    ships: Ship[],
+    indexPlayer: number
+  },
+  id: 0,
+}
 
-export type InputMessage = RegisterRequest | SinglePlayRequest | CreateRoomRequest | AddUserToRoomRequest;
+interface Ship {
+  position: {
+    x: number,
+    y: number,
+  },
+  direction: boolean,
+  length: number,
+  type: "small" | "medium" | "large" | "huge",
+}
+
+
+export type InputMessage = RegisterRequest | SinglePlayRequest | CreateRoomRequest | AddUserToRoomRequest | AddShipsRequest | UpdateRoomEvent;
 
 export interface RegisterResponse {
   type: "reg",
@@ -64,6 +87,16 @@ export interface CreateGameResponse {
   data: {
     idGame: number,
     idPlayer: number,
+  },
+  id: 0,
+}
+
+export interface StartGameResponse {
+  type: 'start_game',
+  data:
+  {
+    ships: Ship[],
+    currentIndexPlayer: number
   },
   id: 0,
 }

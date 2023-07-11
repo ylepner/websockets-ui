@@ -19,6 +19,10 @@ export interface UserAddedToRoom {
 
 export interface RoomUpdated {
   type: 'room_updated';
+}
+
+export interface GameCreated {
+  type: 'game_created';
   roomId: number;
   users: User[];
 }

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
-import { InputMessage, RegisterResponse, UpdateRoomEvent } from './messages';
+import { AddShipsRequest, CreateGameResponse, InputMessage, RegisterResponse, StartGameResponse, UpdateRoomEvent } from './messages';
 import { StateManager } from './state-manager';
 import { AppState } from './app.state';
 
@@ -35,14 +35,26 @@ try {
       if (event.type === 'room_created' || event.type === 'user_registered') {
         const updatedRoomList = listRooms(state);
         sendMessage(updatedRoomList, ws);
-        ws.send(serializeMessage(updatedRoomList))
       }
       if (event.type === 'user_added_to_room') {
+        // if user is added to the room the room should be deleted
         const updatedRoomList = listRooms(state);
+        if (updatedRoomList.data[0].roomUsers.length > 1) {
+          updatedRoomList.data[0].roomUsers = [];
+          stateManager.publishEvent({
+            type: 'room_updated'
+          })
+          const createGame: CreateGameResponse = {
+            type: 'create_game',
+            data: {
+              idGame: 0,
+              idPlayer: 0
+            },
+            id: 0
+          }
+          ws.send(serializeMessage((createGame)))
+        }
         sendMessage(updatedRoomList, ws);
-        ws.send(serializeMessage(updatedRoomList))
-        // if user is added to room the room should be deleted
-        console.log(`users in room:${JSON.stringify(state.users)}`)
       }
     })
     console.log('Connection received ', userId)
@@ -85,6 +97,20 @@ try {
           roomId: dataObj.data.indexRoom,
           userId: userId
         })
+      }
+      if (dataObj.type = 'add_ships') {
+        const res = dataObj as AddShipsRequest
+        const startGame: StartGameResponse = {
+          type: 'start_game',
+          data: {
+            ships: res.data.ships,
+            currentIndexPlayer: 0
+          },
+          id: 0
+        }
+        // ws.send(serializeMessage(startGame))
+        // with 'start game' should be send turn id
+        console.log(`Ships position of user ${res.data.indexPlayer} ${JSON.stringify(res.data.ships)}`)
       }
     });
     wsStream.on('error', (err) => {
