@@ -1,10 +1,11 @@
-import { Ship } from "./messages";
+import { Ship } from './messages';
 
-export type GameId = number
+export type GameId = number;
 export interface AppState {
   users: User[];
   rooms: Room[];
   games: Record<GameId, Game>;
+  // startedGames: Record<GameId, Game>;
 }
 export type UserId = number;
 
@@ -24,7 +25,7 @@ export interface Game {
 }
 
 export interface GameField {
-  ships?: Ship[]
+  ships?: Ship[];
 }
 
 export interface User {

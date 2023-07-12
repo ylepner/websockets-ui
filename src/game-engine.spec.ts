@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect } from 'chai';
 import { GameEngine, UserNotifyFunction } from './game-engine';
-import { EventResponse } from './messages';
+import { EventResponse, UpdateRoomEvent } from './messages';
 import { UserId } from './app.state';
+import { connect } from 'http2';
 
 const messages: any[] = [
   {
@@ -147,27 +149,193 @@ function usersRegistered1CreatedRoom(gameEngine: GameEngine) {
   };
 }
 
-describe('Game engine', () => {
-  it('should register 2 players', () => {
-    const gameEngine = new GameEngine();
-    let afterResponse: any;
-    const user1Reg = gameEngine.regUser(messages[0].data, (reponse) => {
-      afterResponse = reponse;
-    });
-    expect(afterResponse).to.be.deep.eq(messages[1].data);
-    let userRegResponse: any;
-    const user2Reg = gameEngine.regUser(messages[2].data, (response) => {
-      userRegResponse = response;
-    });
-
-    console.log(afterResponse);
+function player2JoinedPlayer1(gameEngine: GameEngine) {
+  const info = usersRegistered1CreatedRoom(gameEngine);
+  info.connection2.callback({
+    type: 'add_user_to_room',
+    data: {
+      indexRoom: (
+        info.messagesLog
+          .filter((x) => x.userId === info.connection2.userId)
+          .at(-1)!.event as UpdateRoomEvent
+      ).data[0].roomId,
+    },
+    id: 0,
   });
+  return info;
+}
 
+function bothPlayersAddedShips(gameEngine: GameEngine) {
+  const result = player2JoinedPlayer1(gameEngine);
+  result.connection1.callback({
+    type: 'add_ships',
+    data: {
+      gameId: 0,
+      ships: [
+        {
+          position: { x: 6, y: 5 },
+          direction: true,
+          type: 'huge',
+          length: 4,
+        },
+        {
+          position: { x: 2, y: 0 },
+          direction: true,
+          type: 'large',
+          length: 3,
+        },
+        {
+          position: { x: 6, y: 0 },
+          direction: true,
+          type: 'large',
+          length: 3,
+        },
+        {
+          position: { x: 1, y: 6 },
+          direction: false,
+          type: 'medium',
+          length: 2,
+        },
+        {
+          position: { x: 2, y: 8 },
+          direction: true,
+          type: 'medium',
+          length: 2,
+        },
+        {
+          position: { x: 8, y: 8 },
+          direction: false,
+          type: 'medium',
+          length: 2,
+        },
+        {
+          position: { x: 2, y: 4 },
+          direction: true,
+          type: 'small',
+          length: 1,
+        },
+        {
+          position: { x: 0, y: 2 },
+          direction: false,
+          type: 'small',
+          length: 1,
+        },
+        {
+          position: { x: 4, y: 5 },
+          direction: false,
+          type: 'small',
+          length: 1,
+        },
+        {
+          position: { x: 8, y: 0 },
+          direction: true,
+          type: 'small',
+          length: 1,
+        },
+      ],
+      indexPlayer: 0,
+    },
+    id: 0,
+  });
+  result.connection2.callback({
+    type: 'add_ships',
+    data: {
+      gameId: 0,
+      ships: [
+        {
+          position: { x: 2, y: 7 },
+          direction: false,
+          type: 'huge',
+          length: 4,
+        },
+        {
+          position: { x: 7, y: 3 },
+          direction: true,
+          type: 'large',
+          length: 3,
+        },
+        {
+          position: { x: 0, y: 0 },
+          direction: true,
+          type: 'large',
+          length: 3,
+        },
+        {
+          position: { x: 1, y: 4 },
+          direction: true,
+          type: 'medium',
+          length: 2,
+        },
+        {
+          position: { x: 9, y: 2 },
+          direction: true,
+          type: 'medium',
+          length: 2,
+        },
+        {
+          position: { x: 3, y: 4 },
+          direction: false,
+          type: 'medium',
+          length: 2,
+        },
+        {
+          position: { x: 0, y: 8 },
+          direction: true,
+          type: 'small',
+          length: 1,
+        },
+        {
+          position: { x: 9, y: 0 },
+          direction: true,
+          type: 'small',
+          length: 1,
+        },
+        {
+          position: { x: 6, y: 0 },
+          direction: true,
+          type: 'small',
+          length: 1,
+        },
+        {
+          position: { x: 6, y: 9 },
+          direction: true,
+          type: 'small',
+          length: 1,
+        },
+      ],
+      indexPlayer: 1,
+    },
+    id: 0,
+  });
+  return result;
+}
+describe('Game engine', () => {
   it('2nd should get list of rooms after joining', () => {
     const gameEngine = new GameEngine();
     const info = usersRegistered1CreatedRoom(gameEngine);
     const lastEvent = info.messagesLog.at(-1);
     expect(lastEvent?.userId).to.be.eq(1);
     expect(lastEvent!.event.type).to.be.eq('update_room');
-  })
+  });
+
+  it('2 players should get message create_game after 2nd joined room', () => {
+    const gameEngine = new GameEngine();
+    const result = player2JoinedPlayer1(gameEngine);
+    const user1Msg = result.messagesLog.filter(
+      (x) => x.userId === result.connection1.userId,
+    );
+    const user2Msg = result.messagesLog.filter(
+      (x) => x.userId === result.connection2.userId,
+    );
+    const lastEvent = user1Msg.at(-1)!.event;
+    expect(lastEvent.type).to.be.eq('create_game');
+    // for 2
+    // gameId correct, 1st has id of 2nd, 2nd of 1st
+  });
+
+  it('should send start game if 2 players added ships', () => {
+    const gameEngine = new GameEngine();
+    const result = bothPlayersAddedShips(gameEngine);
+
+  });
 });

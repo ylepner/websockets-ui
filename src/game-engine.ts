@@ -1,4 +1,4 @@
-import { AppState, UserId } from './app.state';
+import { AppState, Game, UserId } from './app.state';
 import {
   CreateGameResponse,
   EventResponse,
@@ -52,26 +52,38 @@ export class GameEngine {
         const updatedRoomList = listRooms(state, userId);
         notifyFn(updatedRoomList);
       }
-      if (event.type === 'user_added_to_room') {
-        const updatedRoomList = listRooms(state, userId);
-        const game = Object.values(state.games)[0];
-        const players = Object.keys(game.players).map(Number);
-        if (players.includes(userId)) {
-          const createGame: CreateGameResponse = {
-            type: 'create_game',
-            data: {
-              idGame: game.id,
-              idPlayer: players.filter((player) => player !== userId)[0],
-            },
-            id: 0,
-          };
-          notifyFn(createGame);
-          gameId = game.id;
-        }
-        notifyFn(updatedRoomList);
-      }
+      // if (event.type === 'user_added_to_room') {
+      //   const updatedRoomList = listRooms(state, userId);
+      //   const game = Object.values(state.games)[0];
+      //   const players = Object.keys(game.players).map(Number);
+      //   if (players.includes(userId)) {
+      //     const createGame: CreateGameResponse = {
+      //       type: 'create_game',
+      //       data: {
+      //         idGame: game.id,
+      //         idPlayer: players.filter((player) => player !== userId)[0],
+      //       },
+      //       id: 0,
+      //     };
+      //     notifyFn(createGame);
+      //     gameId = game.id;
+      //   }
+      //   notifyFn(updatedRoomList);
+      // }
     });
+    waitForUserJoinedGame(this.stateManager, userId, (game) => {
+      notifyFn(listRooms(this.stateManager.appState, userId));
 
+      const createGame: CreateGameResponse = {
+        type: 'create_game',
+        data: {
+          idGame: game.id,
+          idPlayer: Object.keys(game.players).map(Number).filter((player) => player !== userId)[0],
+        },
+        id: 0,
+      };
+      notifyFn(createGame);
+    });
     return {
       callback: (dataObj) => {
         if (dataObj.type === 'create_room') {
@@ -122,4 +134,23 @@ function listRooms(state: AppState, userId: number): UpdateRoomEvent {
       };
     }),
   };
+}
+
+function waitForUserJoinedGame(
+  stateManager: StateManager,
+  userId: UserId,
+  callback: (game: Game) => void,
+) {
+  const unsub = stateManager.subscribe((event, state, oldState) => {
+    if (state.games === oldState.games) {
+      return;
+    }
+    const game = Object.values(state.games).find((el) => el.players[userId]);
+    if (!game) {
+      return;
+    }
+    unsub();
+    callback(game);
+  });
+  return unsub;
 }

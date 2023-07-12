@@ -51,7 +51,7 @@ try {
         data: dataObj
       })
       console.log(`Data received: ${JSON.stringify(dataObj)}`)
-
+      fs.writeFileSync('C:/Users/yuliy/Desktop/messages.json', JSON.stringify(messages))
       if (dataObj.type === 'reg') {
         info = gameEngine.regUser(dataObj, (data, userId) => {
           sendMessage(data, ws)
@@ -60,7 +60,6 @@ try {
             data: data,
             userId: userId
           })
-          fs.writeFileSync('C:/Users/yuliy/Desktop/messages.json', JSON.stringify(messages))
         })
       } else {
         info?.callback?.(dataObj)
