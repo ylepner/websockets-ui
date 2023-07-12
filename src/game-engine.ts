@@ -8,21 +8,21 @@ import {
   UpdateRoomEvent,
 } from './messages';
 import { StateManager } from './state-manager';
-
+export type UserNotifyFunction = (data: EventResponse, userId: UserId) => void;
 export class GameEngine {
   private readonly stateManager = new StateManager();
-  static userCounter = 0;
+  private userCounter = 0;
 
   constructor() { }
 
   regUser(
     request: RegisterRequest,
-    userNotifyFunction: (data: EventResponse, userId: UserId) => void,
+    userNotifyFunction: UserNotifyFunction,
   ): {
     userId: number;
     callback: (event: InputMessage) => void;
   } {
-    const userId = GameEngine.userCounter++;
+    const userId = this.userCounter++;
     this.stateManager.publishEvent({
       type: 'user_registered',
       id: userId,
@@ -45,10 +45,10 @@ export class GameEngine {
     };
 
     notifyFn(registerResponse);
-
+    notifyFn(listRooms(this.stateManager.appState, userId));
     let gameId: number | undefined;
     this.stateManager.subscribe((event, state) => {
-      if (event.type === 'room_created' || event.type === 'user_registered') {
+      if (event.type === 'room_created') {
         const updatedRoomList = listRooms(state, userId);
         notifyFn(updatedRoomList);
       }

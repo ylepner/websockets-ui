@@ -1,5 +1,7 @@
 import { expect } from 'chai';
-import { GameEngine } from './game-engine';
+import { GameEngine, UserNotifyFunction } from './game-engine';
+import { EventResponse } from './messages';
+import { UserId } from './app.state';
 
 const messages: any[] = [
   {
@@ -103,6 +105,48 @@ const messages: any[] = [
   },
 ];
 
+function usersRegistered1CreatedRoom(gameEngine: GameEngine) {
+  const messagesLog: Array<{ event: EventResponse; userId: UserId }> = [];
+  const userNotify: UserNotifyFunction = (event, userId) => {
+    messagesLog.push({
+      event,
+      userId,
+    });
+  };
+  const connection1 = gameEngine.regUser(
+    {
+      type: 'reg',
+      data: {
+        name: 'TestUser1',
+        password: '1234567',
+      },
+      id: 0,
+    },
+    userNotify,
+  );
+  connection1.callback({
+    type: 'create_room',
+    data: '',
+    id: 0,
+  });
+  const connection2 = gameEngine.regUser(
+    {
+      type: 'reg',
+      data: {
+        name: 'TestUser2',
+        password: '1234567',
+      },
+      id: 0,
+    },
+    userNotify,
+  );
+  return {
+    connection1,
+    connection2,
+    messagesLog,
+  };
+}
+
 describe('Game engine', () => {
   it('should register 2 players', () => {
     const gameEngine = new GameEngine();
@@ -118,4 +162,12 @@ describe('Game engine', () => {
 
     console.log(afterResponse);
   });
+
+  it('2nd should get list of rooms after joining', () => {
+    const gameEngine = new GameEngine();
+    const info = usersRegistered1CreatedRoom(gameEngine);
+    const lastEvent = info.messagesLog.at(-1);
+    expect(lastEvent?.userId).to.be.eq(1);
+    expect(lastEvent!.event.type).to.be.eq('update_room');
+  })
 });
