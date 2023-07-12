@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect } from 'chai';
 import { GameEngine, UserNotifyFunction } from './game-engine';
-import { EventResponse, UpdateRoomEvent } from './messages';
+import { CreateGameResponse, EventResponse, UpdateRoomEvent } from './messages';
 import { UserId } from './app.state';
 import { connect } from 'http2';
+import { resourceUsage } from 'process';
 
 const messages: any[] = [
   {
@@ -327,15 +328,34 @@ describe('Game engine', () => {
     const user2Msg = result.messagesLog.filter(
       (x) => x.userId === result.connection2.userId,
     );
-    const lastEvent = user1Msg.at(-1)!.event;
-    expect(lastEvent.type).to.be.eq('create_game');
-    // for 2
-    // gameId correct, 1st has id of 2nd, 2nd of 1st
+    expect(user1Msg.at(-1)!.event.type).to.be.eq('create_game');
+    expect(user2Msg.at(-1)!.event.type).to.be.eq('create_game');
+    const gameId = result.messagesLog[0].event.id;
+    expect(user2Msg.at(-1)!.event.id && user2Msg.at(-1)!.event.id).to.be.eq(
+      gameId,
+    );
+    const event2 = user1Msg.at(-1)!.event as CreateGameResponse;
+    const event1 = user2Msg.at(-1)!.event as CreateGameResponse;
+    const player2Id = event1.data.idPlayer;
+    const player1Id = event2.data.idPlayer;
+    expect(player2Id).to.be.eq(result.connection1.userId);
+    expect(player1Id).to.be.eq(result.connection2.userId);
   });
 
   it('should send start game if 2 players added ships', () => {
     const gameEngine = new GameEngine();
     const result = bothPlayersAddedShips(gameEngine);
-    // las 2 mess start game
+    const lastMessage1 = result.messagesLog.at(-1)?.event.type;
+    const lastMessage2 = result.messagesLog.at(-2)?.event.type;
+    expect(lastMessage1).to.be.eq('start_game');
+    expect(lastMessage2).to.be.eq('start_game');
+    const user1Msg = result.messagesLog.filter(
+      (x) => x.userId === result.connection1.userId,
+    );
+    const user2Msg = result.messagesLog.filter(
+      (x) => x.userId === result.connection2.userId,
+    );
+    expect(user1Msg.at(-1)!.event.type).to.be.eq('start_game');
+    expect(user2Msg.at(-1)!.event.type).to.be.eq('start_game');
   });
 });
