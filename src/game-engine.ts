@@ -1,4 +1,4 @@
-import { AppState, Game, UserId } from './app.state';
+import { AppState, Game, GameId, UserId } from './app.state';
 import {
   CreateGameResponse,
   EventResponse,
@@ -52,37 +52,35 @@ export class GameEngine {
         const updatedRoomList = listRooms(state, userId);
         notifyFn(updatedRoomList);
       }
-      // if (event.type === 'user_added_to_room') {
-      //   const updatedRoomList = listRooms(state, userId);
-      //   const game = Object.values(state.games)[0];
-      //   const players = Object.keys(game.players).map(Number);
-      //   if (players.includes(userId)) {
-      //     const createGame: CreateGameResponse = {
-      //       type: 'create_game',
-      //       data: {
-      //         idGame: game.id,
-      //         idPlayer: players.filter((player) => player !== userId)[0],
-      //       },
-      //       id: 0,
-      //     };
-      //     notifyFn(createGame);
-      //     gameId = game.id;
-      //   }
-      //   notifyFn(updatedRoomList);
-      // }
     });
     waitForUserJoinedGame(this.stateManager, userId, (game) => {
       notifyFn(listRooms(this.stateManager.appState, userId));
-
+      gameId = game.id;
       const createGame: CreateGameResponse = {
         type: 'create_game',
         data: {
           idGame: game.id,
-          idPlayer: Object.keys(game.players).map(Number).filter((player) => player !== userId)[0],
+          idPlayer: Object.keys(game.players)
+            .map(Number)
+            .filter((player) => player !== userId)[0],
         },
         id: 0,
       };
       notifyFn(createGame);
+      watchStartedGame(this.stateManager, gameId, (game) => {
+        const otherPlayerId = Object.keys(game.players)
+          .map(Number)
+          .filter((player) => player !== userId)[0];
+        notifyFn({
+          type: 'start_game',
+          data: {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            ships: game.players[otherPlayerId].ships!,
+            currentIndexPlayer: otherPlayerId,
+          },
+          id: 0,
+        });
+      });
     });
     return {
       callback: (dataObj) => {
@@ -153,4 +151,27 @@ function waitForUserJoinedGame(
     callback(game);
   });
   return unsub;
+}
+
+function watchStartedGame(
+  stateManager: StateManager,
+  gameId: GameId,
+  callback: (game: Game) => void,
+) {
+  return stateManager.subscribe((event, state, oldState) => {
+    if (state.games === oldState.games) {
+      return;
+    }
+    if (state.games[gameId] == oldState.games[gameId]) {
+      return;
+    }
+    const game = state.games[gameId];
+    if (
+      Object.values(game.players)
+        .map((x) => x.ships)
+        .every((x) => x != null)
+    ) {
+      callback(game);
+    }
+  });
 }

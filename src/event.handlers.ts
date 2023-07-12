@@ -87,7 +87,7 @@ const shipsAdded = createEventHandler('ships_added', (event, state) => {
       [event.gameId]: {
         ...state.games[event.gameId],
         players: {
-          ...state.games[event.gameId],
+          ...state.games[event.gameId].players,
           [event.userId]: {
             ships: ships,
           },

@@ -336,6 +336,6 @@ describe('Game engine', () => {
   it('should send start game if 2 players added ships', () => {
     const gameEngine = new GameEngine();
     const result = bothPlayersAddedShips(gameEngine);
-
+    // las 2 mess start game
   });
 });

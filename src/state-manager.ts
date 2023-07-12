@@ -34,8 +34,8 @@ export class StateManager {
       return;
     }
 
-    // console.log(`Executed event: ${event.type}`)
-    // console.log('Next state: ', nextState);
+    console.log(`Executed event: ${event.type}`)
+    console.log('Next state: ', nextState);
     const oldState = this.appState;
     this.appState = nextState;
 
