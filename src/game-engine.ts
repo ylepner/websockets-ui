@@ -6,7 +6,7 @@ import {
   RegisterRequest,
   RegisterResponse,
   UpdateRoomEvent,
-} from './messages';
+} from './messages/messages';
 import { StateManager } from './state-manager';
 export type UserNotifyFunction = (data: EventResponse, userId: UserId) => void;
 export class GameEngine {

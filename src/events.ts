@@ -1,5 +1,5 @@
 import { User, UserId } from "./app.state";
-import { Ship } from "./messages";
+import { Ship } from "./messages/messages";
 
 export interface RoomCreated {
   type: 'room_created';

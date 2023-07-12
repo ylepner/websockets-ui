@@ -1,4 +1,4 @@
-import { Ship } from './messages';
+import { Ship } from './messages/messages';
 
 export type GameId = number;
 export interface AppState {

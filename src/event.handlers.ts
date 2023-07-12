@@ -50,7 +50,6 @@ const userRegisteredHandler = createEventHandler(
   },
 );
 
-
 const addUserToRoomHandler = createEventHandler(
   'user_added_to_room',
   (event, state) => {

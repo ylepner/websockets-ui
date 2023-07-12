@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect } from 'chai';
 import { GameEngine, UserNotifyFunction } from './game-engine';
-import { CreateGameResponse, EventResponse, UpdateRoomEvent } from './messages';
+import { CreateGameResponse, EventResponse, UpdateRoomEvent } from './messages/messages';
 import { UserId } from './app.state';
 import { connect } from 'http2';
 import { resourceUsage } from 'process';
