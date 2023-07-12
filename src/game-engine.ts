@@ -1,18 +1,26 @@
-import { AppState, UserId } from "./app.state";
-import { CreateGameResponse, EventResponse, InputMessage, RegisterRequest, RegisterResponse, UpdateRoomEvent } from "./messages";
-import { StateManager } from "./state-manager";
+import { AppState, UserId } from './app.state';
+import {
+  CreateGameResponse,
+  EventResponse,
+  InputMessage,
+  RegisterRequest,
+  RegisterResponse,
+  UpdateRoomEvent,
+} from './messages';
+import { StateManager } from './state-manager';
 
 export class GameEngine {
   private readonly stateManager = new StateManager();
   static userCounter = 0;
 
-  constructor() {
+  constructor() { }
 
-  }
-
-  regUser(request: RegisterRequest, userNotifyFunction: (data: EventResponse, userId: UserId) => void): {
-    userId: number,
-    callback: (event: InputMessage) => void
+  regUser(
+    request: RegisterRequest,
+    userNotifyFunction: (data: EventResponse, userId: UserId) => void,
+  ): {
+    userId: number;
+    callback: (event: InputMessage) => void;
   } {
     const userId = GameEngine.userCounter++;
     this.stateManager.publishEvent({
@@ -27,14 +35,14 @@ export class GameEngine {
         name: request.data.name,
         index: userId,
         error: false,
-        errorText: ''
+        errorText: '',
       },
-      id: 0
-    }
+      id: 0,
+    };
 
     const notifyFn = (data: EventResponse) => {
       userNotifyFunction(data, userId);
-    }
+    };
 
     notifyFn(registerResponse);
 
@@ -47,42 +55,44 @@ export class GameEngine {
       if (event.type === 'user_added_to_room') {
         const updatedRoomList = listRooms(state, userId);
         const game = Object.values(state.games)[0];
-        const players = Object.keys(game.players).map(Number)
+        const players = Object.keys(game.players).map(Number);
         if (players.includes(userId)) {
           const createGame: CreateGameResponse = {
             type: 'create_game',
             data: {
               idGame: game.id,
-              idPlayer: players.filter((player) => player !== userId)[0]
+              idPlayer: players.filter((player) => player !== userId)[0],
             },
-            id: 0
-          }
-          notifyFn(createGame)
+            id: 0,
+          };
+          notifyFn(createGame);
           gameId = game.id;
         }
         notifyFn(updatedRoomList);
       }
-    })
+    });
 
     return {
       callback: (dataObj) => {
         if (dataObj.type === 'create_room') {
           this.stateManager.publishEvent({
             type: 'room_created',
-            ownerId: userId
-          })
+            ownerId: userId,
+          });
+          return;
         }
         if (dataObj.type === 'add_user_to_room') {
           this.stateManager.publishEvent({
             type: 'user_added_to_room',
             roomId: dataObj.data.indexRoom,
-            userId: userId
-          })
+            userId: userId,
+          });
+          return;
         }
         if (dataObj.type === 'add_ships') {
           if (gameId == null) {
             console.error(`Game with ${userId} does not exist`);
-            return
+            return;
           }
           this.stateManager.publishEvent({
             type: 'ships_added',
@@ -92,10 +102,9 @@ export class GameEngine {
           });
         }
       },
-      userId: userId
-    }
+      userId: userId,
+    };
   }
-
 }
 
 function listRooms(state: AppState, userId: number): UpdateRoomEvent {
@@ -103,15 +112,14 @@ function listRooms(state: AppState, userId: number): UpdateRoomEvent {
     type: 'update_room',
     id: 0,
     data: state.rooms.map((val, i) => {
-      const player1 = state.users.find(x => x.id === val.player1)!;
+      const player1 = state.users.find((x) => x.id === val.player1)!;
       return {
         roomId: val.id,
-        roomUsers: [player1]
-          .map(p => ({
-            index: p!.id,
-            name: p!.name
-          }))
-      }
-    })
-  }
+        roomUsers: [player1].map((p) => ({
+          index: p!.id,
+          name: p!.name,
+        })),
+      };
+    }),
+  };
 }
