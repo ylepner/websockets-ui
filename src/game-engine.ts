@@ -10,7 +10,10 @@ export class GameEngine {
 
   }
 
-  regUser(request: RegisterRequest, userNotifyFunction: (data: EventResponse) => void): (event: InputMessage) => void {
+  regUser(request: RegisterRequest, userNotifyFunction: (data: EventResponse, userId: UserId) => void): {
+    userId: number,
+    callback: (event: InputMessage) => void
+  } {
     const userId = GameEngine.userCounter++;
     this.stateManager.publishEvent({
       type: 'user_registered',
@@ -28,13 +31,18 @@ export class GameEngine {
       },
       id: 0
     }
-    userNotifyFunction(registerResponse);
+
+    const notifyFn = (data: EventResponse) => {
+      userNotifyFunction(data, userId);
+    }
+
+    notifyFn(registerResponse);
 
     let gameId: number | undefined;
     this.stateManager.subscribe((event, state) => {
       if (event.type === 'room_created' || event.type === 'user_registered') {
         const updatedRoomList = listRooms(state, userId);
-        userNotifyFunction(updatedRoomList);
+        notifyFn(updatedRoomList);
       }
       if (event.type === 'user_added_to_room') {
         const updatedRoomList = listRooms(state, userId);
@@ -49,39 +57,42 @@ export class GameEngine {
             },
             id: 0
           }
-          userNotifyFunction(createGame)
+          notifyFn(createGame)
           gameId = game.id;
         }
-        userNotifyFunction(updatedRoomList);
+        notifyFn(updatedRoomList);
       }
     })
 
-    return (dataObj) => {
-      if (dataObj.type === 'create_room') {
-        this.stateManager.publishEvent({
-          type: 'room_created',
-          ownerId: userId
-        })
-      }
-      if (dataObj.type === 'add_user_to_room') {
-        this.stateManager.publishEvent({
-          type: 'user_added_to_room',
-          roomId: dataObj.data.indexRoom,
-          userId: userId
-        })
-      }
-      if (dataObj.type === 'add_ships') {
-        if (gameId == null) {
-          console.error(`Game with ${userId} does not exist`);
-          return
+    return {
+      callback: (dataObj) => {
+        if (dataObj.type === 'create_room') {
+          this.stateManager.publishEvent({
+            type: 'room_created',
+            ownerId: userId
+          })
         }
-        this.stateManager.publishEvent({
-          type: 'ships_added',
-          gameId: gameId,
-          userId: userId,
-          ships: dataObj.data.ships,
-        });
-      }
+        if (dataObj.type === 'add_user_to_room') {
+          this.stateManager.publishEvent({
+            type: 'user_added_to_room',
+            roomId: dataObj.data.indexRoom,
+            userId: userId
+          })
+        }
+        if (dataObj.type === 'add_ships') {
+          if (gameId == null) {
+            console.error(`Game with ${userId} does not exist`);
+            return
+          }
+          this.stateManager.publishEvent({
+            type: 'ships_added',
+            gameId: gameId,
+            userId: userId,
+            ships: dataObj.data.ships,
+          });
+        }
+      },
+      userId: userId
     }
   }
 

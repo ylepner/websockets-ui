@@ -3,9 +3,9 @@ import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
 import { AddShipsRequest, CreateGameResponse, InputMessage, RegisterResponse, StartGameResponse, TurnResponse, UpdateRoomEvent } from './messages';
-import { StateManager } from './state-manager';
-import { AppState, GameId } from './app.state';
+
 import { GameEngine } from './game-engine';
+import { UserId } from './app.state';
 
 
 export const httpServer = http.createServer(function (req, res) {
@@ -22,7 +22,11 @@ export const httpServer = http.createServer(function (req, res) {
   });
 });
 
-let userCount = 0;
+let messages: {
+  type: 'in' | 'out';
+  data: any;
+  userId?: UserId;
+}[] = []
 
 try {
   const WEBSOCKET_PORT = Number(process.env.WEBSOCKET_PORT) || 3000;
@@ -36,14 +40,30 @@ try {
       encoding: 'utf8',
       decodeStrings: false,
     });
-    let callback: (data: any) => void | undefined;
+    let info: {
+      callback: (data: any) => void | undefined,
+      userId: number;
+    } | undefined;
     wsStream.on('data', (data: string) => {
       const dataObj: InputMessage = deserializeMessage(data);
+      messages.push({
+        type: 'in',
+        data: dataObj
+      })
       console.log(`Data received: ${JSON.stringify(dataObj)}`)
+
       if (dataObj.type === 'reg') {
-        callback = gameEngine.regUser(dataObj, (data) => sendMessage(data, ws))
+        info = gameEngine.regUser(dataObj, (data, userId) => {
+          sendMessage(data, ws)
+          messages.push({
+            type: 'out',
+            data: data,
+            userId: userId
+          })
+          fs.writeFileSync('C:/Users/yuliy/Desktop/messages.json', JSON.stringify(messages))
+        })
       } else {
-        callback?.(dataObj)
+        info?.callback?.(dataObj)
       }
 
     });
