@@ -1,6 +1,6 @@
 import { validate } from 'uuid';
 import { AppState, Game } from './app.state';
-import { FindByType, getEnemy } from './common';
+import { FindByType, attackShip, getEnemy } from './common';
 import { AppEvent, AppEventType } from './events';
 
 type EventOf<T extends AppEventType> = FindByType<AppEvent, T>;
@@ -129,29 +129,45 @@ const shipsAdded = createEventHandler('ships_added', (event, state) => {
 });
 
 const attacked = createEventHandler('attacked', (event, state) => {
-  const gameId = state.games[event.gameId];
-  if (!gameId.gameState) {
+  const game = state.games[event.gameId];
+
+  if (!game.gameState) {
     return state;
   }
-  if (event.playerId === gameId.gameState.currentPlayer) {
-    const game: Game = {
-      ...gameId,
+  if (event.playerId === game.gameState.currentPlayer) {
+    const otherPlayer = getEnemy(game, event.playerId);
+    const attackResult = attackShip(
+      game.players[otherPlayer].ships!,
+      game.gameState.shots[event.playerId],
+      [event.x, event.y],
+    );
+    if (attackResult === 'invalid_move') {
+      throw new ValidationError('invalid move');
+    }
+
+    const nextState: Game = {
+      ...game,
       gameState: {
         shots: {
-          ...gameId.gameState.shots,
+          ...game.gameState.shots,
           [event.playerId]: [
-            ...gameId.gameState.shots[event.playerId],
+            ...game.gameState.shots[event.playerId],
             [event.x, event.y],
           ],
         },
-        currentPlayer: getEnemy(gameId, event.playerId),
+        currentPlayer: getEnemy(game, event.playerId),
       },
     };
+
+    if (attackResult === 'hit' || attackResult === 'kill') {
+      nextState.gameState!.currentPlayer = event.playerId;
+    }
+
     return {
       ...state,
       games: {
         ...state.games,
-        [event.gameId]: game,
+        [event.gameId]: nextState,
       },
     };
   }

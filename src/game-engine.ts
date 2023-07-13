@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { ppid } from 'process';
 import { AppState, Game, GameId, User, UserId } from './app.state';
-import { getEnemy } from './common';
+import { attackShip, getEnemy, turnResultToAttackStatus } from './common';
 import {
   CreateGameResponse,
   EventResponse,
@@ -97,20 +97,30 @@ export class GameEngine {
           eventForGameStartedUnsub();
 
           // check the attack and send to enemy
-          watchPlayersMoves(this.stateManager, game.id, (point, attacker) => {
-            notifyFn({
-              type: 'attack',
-              data: {
-                position: {
-                  x: point[0],
-                  y: point[1],
+          watchPlayersMoves(
+            this.stateManager,
+            game.id,
+            (game, point, attacker) => {
+              const otherPlayer = getEnemy(game, attacker);
+              const shotStatus = attackShip(
+                game.players[otherPlayer].ships!,
+                game.gameState!.shots[attacker],
+                point,
+              );
+              notifyFn({
+                type: 'attack',
+                data: {
+                  position: {
+                    x: point[0],
+                    y: point[1],
+                  },
+                  currentPlayer: attacker,
+                  status: turnResultToAttackStatus(shotStatus),
                 },
-                currentPlayer: attacker,
-                status: 'miss',
-              },
-              id: 0,
-            });
-          });
+                id: 0,
+              });
+            },
+          );
 
           watchGameTurn(this.stateManager, game.id, () => {
             const currentPlayer = getCurrentPlayer(this.stateManager, game);
@@ -229,7 +239,7 @@ function watchStartedGame(
 function watchPlayersMoves(
   stateManager: StateManager,
   gameId: GameId,
-  callback: (v: [number, number], attacker: UserId) => void,
+  callback: (game: Game, v: [number, number], attacker: UserId) => void,
 ) {
   return watchStartedGame(stateManager, gameId, (game, oldGame) => {
     const shots = game.gameState?.shots;
@@ -239,7 +249,7 @@ function watchPlayersMoves(
         .map(Number)
         .forEach((playerId) => {
           if (shots[playerId] > shotsOldGame[playerId]) {
-            callback(shots[playerId].at(-1)!, playerId);
+            callback(oldGame, shots[playerId].at(-1)!, playerId);
           }
         });
     }
@@ -258,7 +268,7 @@ function watchGameTurn(
     }
   });
 }
-
+// correct
 function getCurrentPlayer(stateManager: StateManager, game: Game) {
   const currentPlayer =
     stateManager.appState.games[game.id].gameState?.currentPlayer;

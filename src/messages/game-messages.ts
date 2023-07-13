@@ -9,6 +9,8 @@ export interface AttackRequest {
   id: 0;
 }
 
+export type AttackStatus = 'miss' | 'killed' | 'shot';
+
 export interface AttackResponse {
   type: 'attack';
   data: {
@@ -17,7 +19,7 @@ export interface AttackResponse {
       y: number;
     };
     currentPlayer: number /* id of the player in the current game */;
-    status: 'miss' | 'killed' | 'shot';
+    status: AttackStatus;
   };
   id: 0;
 }
