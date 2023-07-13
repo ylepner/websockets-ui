@@ -21,6 +21,9 @@ let roomCounter = 0;
 const roomCreatedHandler = createEventHandler(
   'room_created',
   (event, state) => {
+    if (state.rooms.find((el) => el.player1 === event.ownerId)) {
+      throw new ValidationError('User can create only one room');
+    }
     return {
       ...state,
       rooms: [
@@ -57,6 +60,9 @@ const addUserToRoomHandler = createEventHandler(
     const room = rooms.find((room) => room.id === event.roomId);
     if (!room) {
       throw new ValidationError(`Room with id ${event.roomId} is not found`);
+    }
+    if (room.player1 === event.userId) {
+      throw new ValidationError(`User can't be added to his own room`);
     }
     const roomId = room.id;
     return {
