@@ -31,8 +31,9 @@ export class GameEngine {
       type: 'user_registered',
       id: userId,
       name: request.data.name,
+      password: request.data.password,
     });
-
+    // проверить если юзер появился
     const registerResponse: RegisterResponse = {
       type: 'reg',
       data: {
@@ -64,9 +65,7 @@ export class GameEngine {
         type: 'create_game',
         data: {
           idGame: game.id,
-          idPlayer: Object.keys(game.players)
-            .map(Number)
-            .filter((player) => player !== userId)[0],
+          idPlayer: userId,
         },
         id: 0,
       };
@@ -96,6 +95,23 @@ export class GameEngine {
           }
           // game started, not to need to subscribe for changes
           eventForGameStartedUnsub();
+
+          // check the attack and send to enemy
+          watchPlayersMoves(this.stateManager, game.id, (point, attacker) => {
+            notifyFn({
+              type: 'attack',
+              data: {
+                position: {
+                  x: point[0],
+                  y: point[1],
+                },
+                currentPlayer: attacker,
+                status: 'miss',
+              },
+              id: 0,
+            });
+          });
+
           watchGameTurn(this.stateManager, game.id, () => {
             const currentPlayer = getCurrentPlayer(this.stateManager, game);
             if (currentPlayer != null) {
@@ -103,25 +119,6 @@ export class GameEngine {
                 type: 'turn',
                 data: {
                   currentPlayer: currentPlayer,
-                },
-                id: 0,
-              });
-            }
-          });
-
-          // check the attack and send to enemy
-          watchPlayersMoves(this.stateManager, game.id, (point) => {
-            const currentPlayer = getCurrentPlayer(this.stateManager, game);
-            if (currentPlayer != null) {
-              notifyFn({
-                type: 'attack',
-                data: {
-                  position: {
-                    x: point[0],
-                    y: point[1],
-                  },
-                  currentPlayer: currentPlayer,
-                  status: 'miss',
                 },
                 id: 0,
               });
@@ -232,7 +229,7 @@ function watchStartedGame(
 function watchPlayersMoves(
   stateManager: StateManager,
   gameId: GameId,
-  callback: (v: [number, number]) => void,
+  callback: (v: [number, number], attacker: UserId) => void,
 ) {
   return watchStartedGame(stateManager, gameId, (game, oldGame) => {
     const shots = game.gameState?.shots;
@@ -242,7 +239,7 @@ function watchPlayersMoves(
         .map(Number)
         .forEach((playerId) => {
           if (shots[playerId] > shotsOldGame[playerId]) {
-            callback(shots[playerId].at(-1)!);
+            callback(shots[playerId].at(-1)!, playerId);
           }
         });
     }
