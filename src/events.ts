@@ -11,6 +11,7 @@ export interface UserRegistered {
   type: 'user_registered';
   name: string;
   id: UserId;
+  password: string;
 }
 
 export interface UserAddedToRoom {

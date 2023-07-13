@@ -50,6 +50,7 @@ try {
       messages.push({
         type: 'in',
         data: dataObj,
+        userId: info?.userId,
       });
       console.log(`Data received: ${JSON.stringify(dataObj)}`);
       fs.writeFileSync(

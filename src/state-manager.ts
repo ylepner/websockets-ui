@@ -1,4 +1,4 @@
-import { AppState, GameId, Game, UserId } from './app.state';
+import { AppState } from './app.state';
 import { ValidationError, eventHandlers } from './event.handlers';
 import { AppEvent } from './events';
 export interface StateUpdate {
@@ -52,35 +52,4 @@ export class StateManager {
     return () => (this.subscribers = this.subscribers.filter((x) => x !== fn));
   }
 }
-function watchGame(gameId: GameId, gameChanged: (game: Game) => void) {
-  return (event: AppEvent, state: AppState, oldState: AppState) => {
-    if (state.games[gameId] !== state.games[gameId]) {
-      gameChanged(state.games[gameId]);
-    }
-  };
-}
-/* 
-function watchPlayerGame(playerId: UserId) {
-  return (event: AppEvent, state: AppState, oldState: AppState) => {
-    const game = Object.values(state.games).find(x => x.player1 === playerId && x.player2 === playerId);
-    if (game) {
-      return watchGame(game.id, (game) => {
 
-      })
-    }
-  }
-}
-
-const sm = new StateManager();
-
-
-const unsub = sm.subscribe(watchGame(42, (game) => {
-  if (!game) {
-    unsub();
-  }
-  if (game.player1Ships && game.player2Ships) {
-    unsub();
-  }
-}))
-
- */

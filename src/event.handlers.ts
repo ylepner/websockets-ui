@@ -1,3 +1,4 @@
+import { validate } from 'uuid';
 import { AppState, Game } from './app.state';
 import { FindByType, getEnemy } from './common';
 import { AppEvent, AppEventType } from './events';
@@ -40,6 +41,13 @@ const roomCreatedHandler = createEventHandler(
 const userRegisteredHandler = createEventHandler(
   'user_registered',
   (event, state) => {
+    // if user is already in db
+    const user = state.users.find((el) => el.name === event.name);
+    if (user) {
+      if (user.password != event.password) {
+        throw new ValidationError('Password is incorrect');
+      }
+    }
     return {
       ...state,
       users: [
@@ -47,6 +55,7 @@ const userRegisteredHandler = createEventHandler(
         {
           id: event.id,
           name: event.name,
+          password: event.password,
         },
       ],
     };
