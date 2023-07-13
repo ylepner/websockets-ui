@@ -1,5 +1,5 @@
-import { AppState } from './app.state';
-import { FindByType } from './common';
+import { AppState, Game } from './app.state';
+import { FindByType, getEnemy } from './common';
 import { AppEvent, AppEventType } from './events';
 
 type EventOf<T extends AppEventType> = FindByType<AppEvent, T>;
@@ -79,21 +79,68 @@ const addUserToRoomHandler = createEventHandler(
 
 const shipsAdded = createEventHandler('ships_added', (event, state) => {
   const ships = event.ships;
+  const game: Game = {
+    ...state.games[event.gameId],
+    players: {
+      ...state.games[event.gameId].players,
+      [event.userId]: {
+        ships: ships,
+      },
+    },
+  };
+  const player1 = Number(Object.keys(game.players)[0]);
+  const player2 = Number(Object.keys(game.players)[1]);
+  if (
+    Object.values(game.players)
+      .map((x) => x.ships)
+      .every((x) => x != null)
+  ) {
+    game.gameState = {
+      currentPlayer: player1,
+      shots: {
+        [player1]: [],
+        [player2]: [],
+      },
+    };
+  }
+
   return {
     ...state,
     games: {
       ...state.games,
-      [event.gameId]: {
-        ...state.games[event.gameId],
-        players: {
-          ...state.games[event.gameId].players,
-          [event.userId]: {
-            ships: ships,
-          },
-        },
-      },
+      [event.gameId]: game,
     },
   };
+});
+
+const attacked = createEventHandler('attacked', (event, state) => {
+  const gameId = state.games[event.gameId];
+  if (!gameId.gameState) {
+    return state;
+  }
+  if (event.playerId === gameId.gameState.currentPlayer) {
+    const game: Game = {
+      ...gameId,
+      gameState: {
+        shots: {
+          ...gameId.gameState.shots,
+          [event.playerId]: [
+            ...gameId.gameState.shots[event.playerId],
+            [event.x, event.y],
+          ],
+        },
+        currentPlayer: getEnemy(gameId, event.playerId),
+      },
+    };
+    return {
+      ...state,
+      games: {
+        ...state.games,
+        [event.gameId]: game,
+      },
+    };
+  }
+  return state;
 });
 
 export const eventHandlers = [
@@ -101,4 +148,5 @@ export const eventHandlers = [
   userRegisteredHandler,
   addUserToRoomHandler,
   shipsAdded,
+  attacked,
 ];

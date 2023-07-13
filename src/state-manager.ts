@@ -1,4 +1,4 @@
-import { AppState, Game, GameId, UserId } from './app.state';
+import { AppState, GameId, Game, UserId } from './app.state';
 import { ValidationError, eventHandlers } from './event.handlers';
 import { AppEvent } from './events';
 export interface StateUpdate {

@@ -1,4 +1,5 @@
 import { RoomCreated, RoomUpdated } from '../events';
+import { AttackRequest, AttackResponse } from './game-messages';
 
 export interface RegisterRequest {
   type: 'reg';
@@ -73,7 +74,8 @@ export type InputMessage =
   | CreateRoomRequest
   | AddUserToRoomRequest
   | AddShipsRequest
-  | UpdateRoomEvent;
+  | UpdateRoomEvent
+  | AttackRequest;
 
 export interface RegisterResponse {
   type: 'reg';
@@ -117,4 +119,5 @@ export type EventResponse =
   | CreateGameResponse
   | StartGameResponse
   | TurnResponse
-  | UpdateRoomEvent;
+  | UpdateRoomEvent
+  | AttackResponse;

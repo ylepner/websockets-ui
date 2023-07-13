@@ -1,5 +1,5 @@
-import { User, UserId } from "./app.state";
-import { Ship } from "./messages/messages";
+import { User, UserId } from './app.state';
+import { Ship } from './messages/messages';
 
 export interface RoomCreated {
   type: 'room_created';
@@ -35,5 +35,19 @@ export interface ShipsAdded {
   ships: Ship[];
 }
 
-export type AppEvent = RoomCreated | UserRegistered | UserAddedToRoom | RoomUpdated | ShipsAdded;
+export interface Attacked {
+  type: 'attacked';
+  gameId: number;
+  playerId: number;
+  x: number;
+  y: number;
+}
+
+export type AppEvent =
+  | RoomCreated
+  | UserRegistered
+  | UserAddedToRoom
+  | RoomUpdated
+  | ShipsAdded
+  | Attacked;
 export type AppEventType = AppEvent['type'];

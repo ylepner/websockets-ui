@@ -18,6 +18,10 @@ export interface Game {
   id: GameId;
   ownerId: UserId;
   players: Record<UserId, GameField>;
+  gameState?: {
+    shots: Record<UserId, [number, number][]>;
+    currentPlayer: UserId;
+  };
   // player1: UserId;
   // player2: UserId;
   // player1Ships?: Ship[];

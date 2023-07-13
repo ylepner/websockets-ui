@@ -2,15 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
-import {
-  AddShipsRequest,
-  CreateGameResponse,
-  InputMessage,
-  RegisterResponse,
-  StartGameResponse,
-  TurnResponse,
-  UpdateRoomEvent,
-} from './messages/messages';
+import { InputMessage } from './messages/messages';
 
 import { GameEngine } from './game-engine';
 import { UserId } from './app.state';

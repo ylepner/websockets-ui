@@ -1,4 +1,8 @@
-import { AppState, Game, GameId, UserId } from './app.state';
+/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { ppid } from 'process';
+import { AppState, Game, GameId, User, UserId } from './app.state';
+import { getEnemy } from './common';
 import {
   CreateGameResponse,
   EventResponse,
@@ -40,6 +44,7 @@ export class GameEngine {
       id: 0,
     };
 
+
     const notifyFn = (data: EventResponse) => {
       userNotifyFunction(data, userId);
     };
@@ -67,20 +72,64 @@ export class GameEngine {
         id: 0,
       };
       notifyFn(createGame);
-      watchStartedGame(this.stateManager, gameId, (game) => {
-        const otherPlayerId = Object.keys(game.players)
-          .map(Number)
-          .filter((player) => player !== userId)[0];
-        notifyFn({
-          type: 'start_game',
-          data: {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            ships: game.players[otherPlayerId].ships!,
-            currentIndexPlayer: otherPlayerId,
-          },
-          id: 0,
-        });
-      });
+      const eventForGameStartedUnsub = watchStartedGame(
+        this.stateManager,
+        gameId,
+        (game) => {
+          const currentPlayer =
+            this.stateManager.appState.games[game.id].gameState?.currentPlayer;
+          const otherPlayer = Object.keys(game.players).map(Number).filter((player) => player !== currentPlayer)[0];
+          if (currentPlayer) {
+            notifyFn({
+              type: 'start_game',
+              data: {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                ships: game.players[currentPlayer].ships!,
+                currentIndexPlayer: currentPlayer,
+              },
+              id: 0,
+            });
+            notifyFn({
+              type: 'turn',
+              data: {
+                currentPlayer: currentPlayer,
+              },
+              id: 0,
+            });
+          }
+          // game started, not to need to subscribe for changes
+          eventForGameStartedUnsub();
+          watchGameTurn(this.stateManager, game.id, () => {
+            if (currentPlayer) {
+              notifyFn({
+                type: 'turn',
+                data: {
+                  currentPlayer: otherPlayer,
+                },
+                id: 0,
+              });
+            }
+          });
+
+
+
+          // check the attack and send to enemy
+          watchPlayersMoves(this.stateManager, game.id, (point) => {
+            notifyFn({
+              type: 'attack',
+              data: {
+                position: {
+                  x: point[0],
+                  y: point[1],
+                },
+                currentPlayer: userId,
+                status: 'miss',
+              },
+              id: 0,
+            });
+          });
+        },
+      );
     });
     return {
       callback: (dataObj) => {
@@ -99,16 +148,25 @@ export class GameEngine {
           });
           return;
         }
+        if (gameId == null) {
+          console.error(`Game with ${userId} does not exist`);
+          return;
+        }
         if (dataObj.type === 'add_ships') {
-          if (gameId == null) {
-            console.error(`Game with ${userId} does not exist`);
-            return;
-          }
           this.stateManager.publishEvent({
             type: 'ships_added',
             gameId: gameId,
             userId: userId,
             ships: dataObj.data.ships,
+          });
+        }
+        if (dataObj.type === 'attack') {
+          this.stateManager.publishEvent({
+            type: 'attacked',
+            gameId: gameId,
+            playerId: userId,
+            x: dataObj.data.x,
+            y: dataObj.data.y,
           });
         }
       },
@@ -117,11 +175,11 @@ export class GameEngine {
   }
 }
 
-function listRooms(state: AppState, userId: number): UpdateRoomEvent {
+function listRooms(state: AppState, userId: UserId): UpdateRoomEvent {
   return {
     type: 'update_room',
     id: 0,
-    data: state.rooms.map((val, i) => {
+    data: state.rooms.map((val) => {
       const player1 = state.users.find((x) => x.id === val.player1)!;
       return {
         roomId: val.id,
@@ -156,7 +214,7 @@ function waitForUserJoinedGame(
 function watchStartedGame(
   stateManager: StateManager,
   gameId: GameId,
-  callback: (game: Game) => void,
+  callback: (game: Game, oldGame: Game) => void,
 ) {
   return stateManager.subscribe((event, state, oldState) => {
     if (state.games === oldState.games) {
@@ -166,12 +224,41 @@ function watchStartedGame(
       return;
     }
     const game = state.games[gameId];
-    if (
-      Object.values(game.players)
-        .map((x) => x.ships)
-        .every((x) => x != null)
-    ) {
-      callback(game);
+    if (game.gameState) {
+      callback(game, oldState.games[gameId]);
+    }
+  });
+}
+
+function watchPlayersMoves(
+  stateManager: StateManager,
+  gameId: GameId,
+  callback: (v: [number, number]) => void,
+) {
+  return watchStartedGame(stateManager, gameId, (game, oldGame) => {
+    const shots = game.gameState?.shots;
+    const shotsOldGame = oldGame.gameState?.shots;
+    if (shots && shotsOldGame) {
+      Object.keys(shots)
+        .map(Number)
+        .forEach((playerId) => {
+          if (shots[playerId] > shotsOldGame[playerId]) {
+            callback(shots[playerId].at(-1)!);
+          }
+        });
+    }
+  });
+}
+
+// check if change turn
+function watchGameTurn(
+  stateManager: StateManager,
+  gameId: GameId,
+  callback: (playerId: UserId) => void,
+) {
+  return watchStartedGame(stateManager, gameId, (game, oldGame) => {
+    if (oldGame.gameState?.currentPlayer !== game.gameState?.currentPlayer) {
+      callback(game.gameState?.currentPlayer!);
     }
   });
 }
