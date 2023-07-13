@@ -44,7 +44,6 @@ export class GameEngine {
       id: 0,
     };
 
-
     const notifyFn = (data: EventResponse) => {
       userNotifyFunction(data, userId);
     };
@@ -76,10 +75,8 @@ export class GameEngine {
         this.stateManager,
         gameId,
         (game) => {
-          const currentPlayer =
-            this.stateManager.appState.games[game.id].gameState?.currentPlayer;
-          const otherPlayer = Object.keys(game.players).map(Number).filter((player) => player !== currentPlayer)[0];
-          if (currentPlayer) {
+          const currentPlayer = getCurrentPlayer(this.stateManager, game);
+          if (currentPlayer != null) {
             notifyFn({
               type: 'start_game',
               data: {
@@ -100,33 +97,35 @@ export class GameEngine {
           // game started, not to need to subscribe for changes
           eventForGameStartedUnsub();
           watchGameTurn(this.stateManager, game.id, () => {
-            if (currentPlayer) {
+            const currentPlayer = getCurrentPlayer(this.stateManager, game);
+            if (currentPlayer != null) {
               notifyFn({
                 type: 'turn',
                 data: {
-                  currentPlayer: otherPlayer,
+                  currentPlayer: currentPlayer,
                 },
                 id: 0,
               });
             }
           });
 
-
-
           // check the attack and send to enemy
           watchPlayersMoves(this.stateManager, game.id, (point) => {
-            notifyFn({
-              type: 'attack',
-              data: {
-                position: {
-                  x: point[0],
-                  y: point[1],
+            const currentPlayer = getCurrentPlayer(this.stateManager, game);
+            if (currentPlayer != null) {
+              notifyFn({
+                type: 'attack',
+                data: {
+                  position: {
+                    x: point[0],
+                    y: point[1],
+                  },
+                  currentPlayer: currentPlayer,
+                  status: 'miss',
                 },
-                currentPlayer: userId,
-                status: 'miss',
-              },
-              id: 0,
-            });
+                id: 0,
+              });
+            }
           });
         },
       );
@@ -261,4 +260,13 @@ function watchGameTurn(
       callback(game.gameState?.currentPlayer!);
     }
   });
+}
+
+function getCurrentPlayer(stateManager: StateManager, game: Game) {
+  const currentPlayer =
+    stateManager.appState.games[game.id].gameState?.currentPlayer;
+  if (currentPlayer != null) {
+    return currentPlayer;
+  }
+  return null;
 }
