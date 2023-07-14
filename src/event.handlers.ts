@@ -174,6 +174,7 @@ const attacked = createEventHandler('attacked', (event, state) => {
   return state;
 });
 
+
 export const eventHandlers = [
   roomCreatedHandler,
   userRegisteredHandler,
@@ -181,3 +182,7 @@ export const eventHandlers = [
   shipsAdded,
   attacked,
 ];
+
+// таймер
+// random attack
+// miss around

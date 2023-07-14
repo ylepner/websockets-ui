@@ -1,5 +1,4 @@
-import { RoomCreated, RoomUpdated } from '../events';
-import { AttackRequest, AttackResponse } from './game-messages';
+import { AttackRequest, AttackResponse, RandomAttackRequest } from './game-messages';
 
 export interface RegisterRequest {
   type: 'reg';
@@ -75,7 +74,8 @@ export type InputMessage =
   | AddUserToRoomRequest
   | AddShipsRequest
   | UpdateRoomEvent
-  | AttackRequest;
+  | AttackRequest
+  | RandomAttackRequest;
 
 export interface RegisterResponse {
   type: 'reg';

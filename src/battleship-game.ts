@@ -11,6 +11,7 @@ interface GameShip {
   type: string;
   length: number;
   hits: number;
+
 }
 
 export type GameStatus = 'miss' | 'hit' | 'kill' | 'game_over' | 'invalid_move';
@@ -19,8 +20,9 @@ export class BattleshipGame {
   private ships: GameShip[];
   private remainingShips: number;
   private hits: Set<string>;
+  boardSize: number;
 
-  constructor(ships: Ship[]) {
+  constructor(ships: Ship[], boardSize: number) {
     this.ships = ships.map((s) => ({
       ...s,
       hits: 0,
@@ -28,6 +30,7 @@ export class BattleshipGame {
     }));
     this.remainingShips = ships.length;
     this.hits = new Set<string>();
+    this.boardSize = boardSize;
   }
 
   private checkShipCollision(position: Position): boolean {
@@ -109,5 +112,25 @@ export class BattleshipGame {
 
     return this.remainingShips === 0 ? 'game_over' : 'miss';
   }
-}
 
+  public getRandomEmptyPosition(): Position | null {
+    const emptyPositions: Position[] = [];
+
+    for (let x = 0; x < this.boardSize; x++) {
+      for (let y = 0; y < this.boardSize; y++) {
+        const position: Position = { x, y };
+
+        if (!this.checkShipCollision(position) && !this.hits.has(`${x},${y}`)) {
+          emptyPositions.push(position);
+        }
+      }
+    }
+
+    if (emptyPositions.length === 0) {
+      return null;
+    }
+
+    const randomIndex = Math.floor(Math.random() * emptyPositions.length);
+    return emptyPositions[randomIndex];
+  }
+}

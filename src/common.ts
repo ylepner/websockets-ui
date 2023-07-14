@@ -6,7 +6,7 @@ import { Ship } from './messages/messages';
 export type FindByType<Union, Type> = Union extends { type: Type }
   ? Union
   : never;
-type Point = [number, number];
+export type Point = [number, number];
 export function getEnemy(game: Game, me: UserId) {
   return Object.keys(game.players)
     .map(Number)
@@ -18,7 +18,7 @@ export function attackShip(
   attackList: Point[],
   attackPosition: Point,
 ) {
-  const game = new BattleshipGame([...ships]);
+  const game = new BattleshipGame([...ships], 10);
   attackList.forEach((attack) => {
     game.playTurn({ x: attack[0], y: attack[1] });
   });
@@ -34,7 +34,20 @@ export function turnResultToAttackStatus(
     case 'hit':
       return 'shot';
     case 'kill':
-      return 'killed'
-    default: throw new Error('invalid state')
+      return 'killed';
+    default:
+      throw new Error('invalid state');
   }
+}
+
+export function getRandomPoint(ships: Ship[], attackList: Point[]) {
+  const game = new BattleshipGame([...ships], 10);
+  attackList.forEach((attack) => {
+    game.playTurn({ x: attack[0], y: attack[1] });
+  });
+  const randomShot = game.getRandomEmptyPosition();
+  if (randomShot) {
+    return randomShot;
+  }
+  return null;
 }
