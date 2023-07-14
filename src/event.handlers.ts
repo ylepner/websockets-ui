@@ -141,7 +141,7 @@ const attacked = createEventHandler('attacked', (event, state) => {
       game.gameState.shots[event.playerId],
       [event.x, event.y],
     );
-    if (attackResult === 'invalid_move') {
+    if (attackResult.type === 'invalid_move') {
       throw new ValidationError('invalid move');
     }
 
@@ -159,10 +159,9 @@ const attacked = createEventHandler('attacked', (event, state) => {
       },
     };
 
-    if (attackResult === 'hit' || attackResult === 'kill') {
+    if (attackResult.type === 'hit' || attackResult.type === 'kill') {
       nextState.gameState!.currentPlayer = event.playerId;
     }
-
     return {
       ...state,
       games: {
@@ -174,7 +173,6 @@ const attacked = createEventHandler('attacked', (event, state) => {
   return state;
 });
 
-
 export const eventHandlers = [
   roomCreatedHandler,
   userRegisteredHandler,
@@ -182,7 +180,3 @@ export const eventHandlers = [
   shipsAdded,
   attacked,
 ];
-
-// таймер
-// random attack
-// miss around

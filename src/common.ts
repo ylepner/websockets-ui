@@ -28,7 +28,7 @@ export function attackShip(
 export function turnResultToAttackStatus(
   attackResult: GameStatus,
 ): AttackStatus {
-  switch (attackResult) {
+  switch (attackResult.type) {
     case 'miss':
       return 'miss';
     case 'hit':

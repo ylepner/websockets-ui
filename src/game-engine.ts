@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { type } from 'os';
 import { AppState, Game, GameId, UserId } from './app.state';
-import { attackShip, getEnemy, getRandomPoint, turnResultToAttackStatus } from './common';
+import {
+  attackShip,
+  getEnemy,
+  getRandomPoint,
+  turnResultToAttackStatus,
+} from './common';
 import {
   CreateGameResponse,
   EventResponse,
@@ -92,36 +98,19 @@ export class GameEngine {
               id: 0,
             });
           }
-          // game started, not to need to subscribe for changes
+
           eventForGameStartedUnsub();
 
-
-
-          // check the attack and send to enemy
           watchPlayersMoves(
             this.stateManager,
             game.id,
             (game, point, attacker) => {
               const otherPlayer = getEnemy(game, attacker);
-              const shotStatus = attackShip(
-                game.players[otherPlayer].ships!,
-                game.gameState!.shots[attacker],
-                point,
-              );
-              notifyFn({
-                type: 'attack',
-                data: {
-                  position: {
-                    x: point[0],
-                    y: point[1],
-                  },
-                  currentPlayer: attacker,
-                  status: turnResultToAttackStatus(shotStatus),
-                },
-                id: 0,
-              });
+              const evt = shotToEvent(game, otherPlayer, attacker, point);
+              evt.forEach((el) => notifyFn(el));
             },
           );
+
           watchGameTurn(this.stateManager, game.id, () => {
             const currentPlayer = getCurrentPlayer(this.stateManager, game);
             if (currentPlayer != null) {
@@ -176,8 +165,10 @@ export class GameEngine {
           });
         }
         if (dataObj.type === 'randomAttack') {
-          const ships = this.stateManager.appState.games[gameId].players[userId].ships!;
-          const shots = this.stateManager.appState.games[gameId].gameState?.shots[userId]
+          const ships =
+            this.stateManager.appState.games[gameId].players[userId].ships!;
+          const shots =
+            this.stateManager.appState.games[gameId].gameState?.shots[userId];
           if (shots) {
             const shot = getRandomPoint(ships, shots)!;
             this.stateManager.publishEvent({
@@ -186,14 +177,56 @@ export class GameEngine {
               playerId: userId,
               x: shot.x,
               y: shot.y,
-            })
+            });
           }
         }
-
       },
       userId: userId,
     };
   }
+}
+
+function shotToEvent(
+  game: Game,
+  otherPlayer: number,
+  attacker: number,
+  point: [number, number],
+): EventResponse[] {
+  const shotStatus = attackShip(
+    game.players[otherPlayer].ships!,
+    game.gameState!.shots[attacker],
+    point,
+  );
+  const events: EventResponse[] = [
+    {
+      type: 'attack',
+      data: {
+        position: {
+          x: point[0],
+          y: point[1],
+        },
+        currentPlayer: attacker,
+        status: turnResultToAttackStatus(shotStatus),
+      },
+      id: 0,
+    },
+  ];
+
+  if (shotStatus.type == 'kill') {
+    for (let i = 0; i < shotStatus.data.length; i++) {
+      events.push({
+        type: 'attack',
+        data: {
+          position: shotStatus.data[i],
+          currentPlayer: attacker,
+          status: turnResultToAttackStatus({ type: 'miss' }),
+        },
+        id: 0,
+      });
+    }
+  }
+
+  return events;
 }
 
 function listRooms(state: AppState, userId: UserId): UpdateRoomEvent {
