@@ -5,6 +5,8 @@ export interface AppState {
   users: User[];
   rooms: Room[];
   games: Record<GameId, Game>;
+  // winner looser
+  gameResults: Record<GameId, {}>;
   // startedGames: Record<GameId, Game>;
 }
 export type UserId = number;

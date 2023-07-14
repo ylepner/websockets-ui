@@ -11,7 +11,6 @@ interface GameShip {
   type: string;
   length: number;
   hits: number;
-
 }
 
 export type GameStatus =
@@ -72,26 +71,10 @@ export class BattleshipGame {
           if (ship.hits === length) {
             this.remainingShips--;
             const sunkPoints: Position[] = [];
-            for (let j = 0; j < length; j++) {
-              const point = { x: x + j, y };
-              this.hits.add(`${point.x},${point.y}`);
-              sunkPoints.push(point);
-              if (y > 0) {
-                const leftPoint = { x: x + j, y: y - 1 };
-                if (!this.checkShipCollision(leftPoint) && !this.hits.has(`${leftPoint.x},${leftPoint.y}`)) {
-                  this.hits.add(`${leftPoint.x},${leftPoint.y}`);
-                  sunkPoints.push(leftPoint);
-                }
-              }
-              if (y < this.boardSize - 1) {
-                const rightPoint = { x: x + j, y: y + 1 };
-                if (!this.checkShipCollision(rightPoint) && !this.hits.has(`${rightPoint.x},${rightPoint.y}`)) {
-                  this.hits.add(`${rightPoint.x},${rightPoint.y}`);
-                  sunkPoints.push(rightPoint);
-                }
-              }
-            }
-            return { type: 'kill', data: sunkPoints };
+            const around = Array.from(
+              pointsAround(ship, this.boardSize),
+            ).filter((x) => !this.hits.has(`${x.x},${x.y}`));
+            return { type: 'kill', data: around };
           }
 
           return { type: 'hit' };
@@ -104,27 +87,10 @@ export class BattleshipGame {
 
           if (ship.hits === length) {
             this.remainingShips--;
-            const sunkPoints: Position[] = [];
-            for (let j = 0; j < length; j++) {
-              const point = { x, y: y + j };
-              this.hits.add(`${point.x},${point.y}`);
-              sunkPoints.push(point);
-              if (x > 0) {
-                const topPoint = { x: x - 1, y: y + j };
-                if (!this.checkShipCollision(topPoint) && !this.hits.has(`${topPoint.x},${topPoint.y}`)) {
-                  this.hits.add(`${topPoint.x},${topPoint.y}`);
-                  sunkPoints.push(topPoint);
-                }
-              }
-              if (x < this.boardSize - 1) {
-                const bottomPoint = { x: x + 1, y: y + j };
-                if (!this.checkShipCollision(bottomPoint) && !this.hits.has(`${bottomPoint.x},${bottomPoint.y}`)) {
-                  this.hits.add(`${bottomPoint.x},${bottomPoint.y}`);
-                  sunkPoints.push(bottomPoint);
-                }
-              }
-            }
-            return { type: 'kill', data: sunkPoints };
+            const around = Array.from(
+              pointsAround(ship, this.boardSize),
+            ).filter((x) => !this.hits.has(`${x.x},${x.y}`));
+            return { type: 'kill', data: around };
           }
 
           return { type: 'hit' };
@@ -176,5 +142,36 @@ export class BattleshipGame {
 
     const randomIndex = Math.floor(Math.random() * emptyPositions.length);
     return emptyPositions[randomIndex];
+  }
+}
+
+export function* pointsAround(ship: GameShip, boardSize: number) {
+  function toVector(p: { x: number; y: number }): [number, number] {
+    return [p.x, p.y];
+  }
+  const k = ship.direction ? 0 : 1;
+  for (const offset of [-1, 0, 1]) {
+    const otherCoord = toVector(ship.position)[(k + 1) % 2] + offset;
+    if (otherCoord < 0 || otherCoord > boardSize) {
+      continue;
+    }
+    for (let i = -1; i < ship.length + 1; i++) {
+      const coord = toVector(ship.position)[k] + i;
+      if (coord < 0 || coord > boardSize) {
+        continue;
+      }
+      if (offset === 0) {
+        if (i !== -1 && i !== ship.length) {
+          continue;
+        }
+      }
+      const res = [0, 0];
+      res[k] = coord;
+      (res[(k + 1) % 2] = toVector(ship.position)[(k + 1) % 2] + offset),
+        yield {
+          x: res[0],
+          y: res[1],
+        };
+    }
   }
 }

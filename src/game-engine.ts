@@ -111,6 +111,8 @@ export class GameEngine {
             },
           );
 
+          // delete
+          //after eash shot - turn, even if current the same
           watchGameTurn(this.stateManager, game.id, () => {
             const currentPlayer = getCurrentPlayer(this.stateManager, game);
             if (currentPlayer != null) {
@@ -282,6 +284,10 @@ function watchStartedGame(
       callback(game, oldState.games[gameId]);
     }
   });
+}
+
+function watchGameEnd(stateManager: StateManager, gameId: GameId, callback: () => void) {
+  //появился гейм резвлт с айдишниеом игру, удалить игру из списка игр и добавить в список рещультатов
 }
 
 function watchPlayersMoves(
