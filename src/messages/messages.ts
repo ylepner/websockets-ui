@@ -81,7 +81,8 @@ export type InputMessage =
   | AddShipsRequest
   | UpdateRoomEvent
   | AttackRequest
-  | RandomAttackRequest;
+  | RandomAttackRequest
+  | UserDisconnected;
 
 export interface RegisterResponse {
   type: 'reg';
@@ -123,6 +124,12 @@ export interface TurnResponse {
 export interface UpdateWinners {
   type: 'update_winners';
   data: Winner[];
+  id: 0;
+}
+
+export interface UserDisconnected {
+  type: 'user_disconnected';
+  userId: number;
   id: 0;
 }
 

@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { type } from 'os';
 import { AppState, Game, GameId, GameResult, UserId } from './app.state';
 import {
   attackShip,
@@ -28,10 +25,18 @@ export class GameEngine {
   regUser(
     request: RegisterRequest,
     userNotifyFunction: UserNotifyFunction,
-  ): {
-    userId: number;
-    callback: (event: InputMessage) => void;
-  } {
+  ):
+    | {
+      userId: number;
+      callback: (event: InputMessage) => void;
+    }
+    | undefined {
+    // сделать тут валидацию.
+    // если имя и пароль совпадают то взять userId из stateManager
+    // publishEvent('user_registered') делать не нужно тогда
+
+    // если пароль не совпадает, то вернуть undefined
+
     const userId = this.userCounter++;
     this.stateManager.publishEvent({
       type: 'user_registered',
@@ -206,6 +211,12 @@ export class GameEngine {
               y: shot.y,
             });
           }
+        }
+        if (dataObj.type === 'user_disconnected') {
+          this.stateManager.publishEvent({
+            type: 'user_disconnected',
+            userId: userId,
+          });
         }
       },
       userId: userId,

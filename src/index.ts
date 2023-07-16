@@ -3,9 +3,9 @@ import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer, createWebSocketStream, WebSocket } from 'ws';
 import { InputMessage } from './messages/messages';
-
 import { GameEngine } from './game-engine';
 import { UserId } from './app.state';
+import { Info } from './models';
 
 export const httpServer = http.createServer(function (req, res) {
   const __dirname = path.resolve(path.dirname(''));
@@ -22,7 +22,7 @@ export const httpServer = http.createServer(function (req, res) {
   });
 });
 
-let messages: {
+const messages: {
   type: 'in' | 'out';
   data: any;
   userId?: UserId;
@@ -39,27 +39,14 @@ try {
       encoding: 'utf8',
       decodeStrings: false,
     });
-    let info:
-      | {
-        callback: (data: any) => void | undefined;
-        userId: number;
-      }
-      | undefined;
+
+    let info: Info | undefined;
     wsStream.on('data', (data: string) => {
       const dataObj: InputMessage = deserializeMessage(data);
-      messages.push({
-        type: 'in',
-        data: dataObj,
-        userId: info?.userId,
-      });
       console.log(`Data received: ${JSON.stringify(dataObj)}`);
-      fs.writeFileSync(
-        'C:/Users/yuliy/Desktop/messages.json',
-        JSON.stringify(messages),
-      );
       if (dataObj.type === 'reg') {
         info = gameEngine.regUser(dataObj, (data, userId) => {
-          sendMessage(data, ws);
+          sendMessage(data, ws, userId);
           messages.push({
             type: 'out',
             data: data,
@@ -73,11 +60,22 @@ try {
     wsStream.on('error', (err) => {
       console.error(err);
     });
+    wsStream.on('end', () => {
+      console.log(`User ${info?.userId} has left`);
+      if (info?.userId) {
+        info.callback({
+          type: 'user_disconnected',
+          userId: info.userId,
+          id: 0,
+        });
+      }
+    });
   });
   wsServer.on('error', (err) => {
     console.error(err);
     console.log(`Websocket server closed`);
   });
+
   console.log(`Start websocket server on the ${WEBSOCKET_PORT} port`);
 } catch (e) {
   console.error(e);
@@ -104,7 +102,7 @@ function serializeMessage<T extends { data: any; type: string }>(obj: T) {
 }
 
 function deserializeMessage<T>(input: string): T {
-  let obj = JSON.parse(input);
+  const obj = JSON.parse(input);
   if (obj.data) obj.data = JSON.parse(obj.data);
   return obj;
 }

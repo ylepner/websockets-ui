@@ -1,7 +1,10 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect } from 'chai';
 import { GameEngine, UserNotifyFunction } from './game-engine';
-import { CreateGameResponse, EventResponse, UpdateRoomEvent } from './messages/messages';
+import {
+  CreateGameResponse,
+  EventResponse,
+  UpdateRoomEvent,
+} from './messages/messages';
 import { UserId } from './app.state';
 import { connect } from 'http2';
 import { resourceUsage } from 'process';
@@ -127,6 +130,9 @@ function usersRegistered1CreatedRoom(gameEngine: GameEngine) {
     },
     userNotify,
   );
+  if (!connection1) {
+    throw new Error('Oups');
+  }
   connection1.callback({
     type: 'create_room',
     data: '',
@@ -143,6 +149,9 @@ function usersRegistered1CreatedRoom(gameEngine: GameEngine) {
     },
     userNotify,
   );
+  if (!connection2) {
+    throw new Error('Oups');
+  }
   return {
     connection1,
     connection2,
@@ -310,13 +319,6 @@ function bothPlayersAddedShips(gameEngine: GameEngine) {
   });
   return result;
 }
-
-// function player1Shotsplayer2Looser(gameEngine: GameEngine) {
-//   const result = bothPlayersAddedShips(gameEngine);
-//   result.connection1.callback({
-
-//   })
-// }
 
 describe('Game engine', () => {
   it('2nd should get list of rooms after joining', () => {

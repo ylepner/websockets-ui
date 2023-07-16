@@ -191,10 +191,38 @@ const attacked = createEventHandler('attacked', (event, state) => {
   return state;
 });
 
+const userDisconnected = createEventHandler(
+  'user_disconnected',
+  (event, state) => {
+    const game = Object.values(state.games).find(
+      (el) => el.players[event.userId],
+    );
+    if (game) {
+      const winner = getEnemy(game, event.userId);
+      const looser = event.userId;
+      const result: AppState = {
+        ...state,
+        gameResults: {
+          ...state.gameResults,
+          [game.id]: {
+            gameId: game.id,
+            winnerId: winner,
+            looserId: looser,
+          },
+        },
+      };
+      delete result.games[game.id];
+      return result;
+    }
+    return state;
+  },
+);
+
 export const eventHandlers = [
   roomCreatedHandler,
   userRegisteredHandler,
   addUserToRoomHandler,
   shipsAdded,
   attacked,
+  userDisconnected,
 ];

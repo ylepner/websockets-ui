@@ -52,6 +52,11 @@ export interface GameFinished {
   looserId: number;
 }
 
+export interface UserDisconnected {
+  type: 'user_disconnected';
+  userId: number;
+}
+
 export type AppEvent =
   | RoomCreated
   | UserRegistered
@@ -60,5 +65,6 @@ export type AppEvent =
   | ShipsAdded
   | Attacked
   | Turn
-  | GameFinished;
+  | GameFinished
+  | UserDisconnected;
 export type AppEventType = AppEvent['type'];
