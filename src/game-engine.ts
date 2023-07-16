@@ -362,19 +362,6 @@ function watchPlayersMoves(
   });
 }
 
-// check if change turn
-function watchGameTurn(
-  stateManager: StateManager,
-  gameId: GameId,
-  callback: (playerId: UserId) => void,
-) {
-  return watchStartedGame(stateManager, gameId, (game, oldGame) => {
-    if (game.gameState?.currentPlayer) {
-      callback(game.gameState?.currentPlayer!);
-    }
-  });
-}
-// correct
 function getCurrentPlayer(stateManager: StateManager, game: Game) {
   const currentPlayer =
     stateManager.appState.games[game.id].gameState?.currentPlayer;
