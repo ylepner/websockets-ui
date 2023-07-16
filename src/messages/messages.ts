@@ -1,4 +1,10 @@
-import { AttackRequest, AttackResponse, Finish, RandomAttackRequest } from './game-messages';
+import { Winner } from '../app.state';
+import {
+  AttackRequest,
+  AttackResponse,
+  Finish,
+  RandomAttackRequest,
+} from './game-messages';
 
 export interface RegisterRequest {
   type: 'reg';
@@ -114,6 +120,12 @@ export interface TurnResponse {
   id: 0;
 }
 
+export interface UpdateWinners {
+  type: 'update_winners';
+  data: Winner[];
+  id: 0;
+}
+
 export type EventResponse =
   | RegisterResponse
   | CreateGameResponse
@@ -121,4 +133,5 @@ export type EventResponse =
   | TurnResponse
   | UpdateRoomEvent
   | AttackResponse
-  | Finish;
+  | Finish
+  | UpdateWinners;

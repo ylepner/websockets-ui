@@ -4,6 +4,7 @@ import { type } from 'os';
 import { AppState, Game, GameId, GameResult, UserId } from './app.state';
 import {
   attackShip,
+  convertGameResultToWinnersTable,
   getEnemy,
   getRandomPoint,
   turnResultToAttackStatus,
@@ -54,6 +55,16 @@ export class GameEngine {
       userNotifyFunction(data, userId);
     };
 
+    if (this.stateManager.appState.gameResults) {
+      const winners = convertGameResultToWinnersTable(this.stateManager.appState.users, this.stateManager.appState.gameResults);
+      notifyFn({
+        type: "update_winners",
+        data: winners,
+        id: 0,
+      });
+    }
+
+
     notifyFn(registerResponse);
     notifyFn(listRooms(this.stateManager.appState, userId));
     let gameId: number | undefined;
@@ -103,6 +114,12 @@ export class GameEngine {
               data: {
                 winPlayer: gameResult.winnerId,
               },
+              id: 0,
+            });
+            const winners = convertGameResultToWinnersTable(this.stateManager.appState.users, this.stateManager.appState.gameResults);
+            notifyFn({
+              type: "update_winners",
+              data: winners,
               id: 0,
             });
           });
@@ -190,18 +207,6 @@ export class GameEngine {
             });
           }
         }
-        // if (dataObj.type === 'finish') {
-        //   const winner =
-        //     this.stateManager.appState.gameResults[gameId].winnerId;
-        //   const looser =
-        //     this.stateManager.appState.gameResults[gameId].looserId;
-        //   this.stateManager.publishEvent({
-        //     type: 'finished',
-        //     gameId: gameId,
-        //     winnerId: winner,
-        //     looserId: looser,
-        //   });
-        // }
       },
       userId: userId,
     };

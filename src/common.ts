@@ -1,4 +1,4 @@
-import { Game, UserId } from './app.state';
+import { Game, GameId, GameResult, User, UserId, Winner } from './app.state';
 import { BattleshipGame, GameStatus } from './battleship-game';
 import { AttackStatus } from './messages/game-messages';
 import { Ship } from './messages/messages';
@@ -50,4 +50,20 @@ export function getRandomPoint(ships: Ship[], attackList: Point[]) {
     return randomShot;
   }
   return null;
+}
+
+export function convertGameResultToWinnersTable(users: User[],
+  gameResults: Record<GameId, GameResult>,
+): Winner[] {
+  const results = gameResults;
+  const resultArr = Object.values(results);
+  const wins = resultArr.filter((el) => el.winnerId);
+  const res = resultArr.map((el) => {
+    const winnerName = users.find((user) => user.id === el.winnerId)?.name!;
+    return {
+      name: winnerName,
+      wins: wins.length,
+    };
+  });
+  return res;
 }
