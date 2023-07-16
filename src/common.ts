@@ -52,18 +52,26 @@ export function getRandomPoint(ships: Ship[], attackList: Point[]) {
   return null;
 }
 
-export function convertGameResultToWinnersTable(users: User[],
+export function convertGameResultToWinnersTable(
+  users: User[],
   gameResults: Record<GameId, GameResult>,
 ): Winner[] {
-  const results = gameResults;
-  const resultArr = Object.values(results);
-  const wins = resultArr.filter((el) => el.winnerId);
-  const res = resultArr.map((el) => {
-    const winnerName = users.find((user) => user.id === el.winnerId)?.name!;
+  const resultArr = Object.values(gameResults);
+  const userWins: Record<number, number> = {};
+  for (const result of resultArr) {
+    if (userWins[result.winnerId]) {
+      userWins[result.winnerId] += 1;
+    } else {
+      userWins[result.winnerId] = 1;
+    }
+  }
+  const result = Object.entries(userWins).map((el) => {
+    const winnerName = users.find((user) => user.id === Number(el[0]))?.name!;
+    const wins = userWins[Number(el[0])];
     return {
       name: winnerName,
-      wins: wins.length,
+      wins: wins,
     };
   });
-  return res;
+  return result;
 }

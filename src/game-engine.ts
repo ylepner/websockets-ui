@@ -56,14 +56,16 @@ export class GameEngine {
     };
 
     if (this.stateManager.appState.gameResults) {
-      const winners = convertGameResultToWinnersTable(this.stateManager.appState.users, this.stateManager.appState.gameResults);
+      const winners = convertGameResultToWinnersTable(
+        this.stateManager.appState.users,
+        this.stateManager.appState.gameResults,
+      );
       notifyFn({
-        type: "update_winners",
+        type: 'update_winners',
         data: winners,
         id: 0,
       });
     }
-
 
     notifyFn(registerResponse);
     notifyFn(listRooms(this.stateManager.appState, userId));
@@ -86,20 +88,60 @@ export class GameEngine {
         id: 0,
       };
       notifyFn(createGame);
-      const eventForGameStartedUnsub = watchStartedGame(
-        this.stateManager,
-        gameId,
-        (game) => {
+      const unsub = watchStartedGame(this.stateManager, gameId, (game) => {
+        const currentPlayer = getCurrentPlayer(this.stateManager, game);
+        unsub();
+        if (currentPlayer != null) {
+          notifyFn({
+            type: 'start_game',
+            data: {
+              ships: game.players[currentPlayer].ships!,
+              currentIndexPlayer: currentPlayer,
+            },
+            id: 0,
+          });
+          notifyFn({
+            type: 'turn',
+            data: {
+              currentPlayer: currentPlayer,
+            },
+            id: 0,
+          });
+        }
+        watchGameEnd(this.stateManager, game.id, (gameResult) => {
+          notifyFn({
+            type: 'finish',
+            data: {
+              winPlayer: gameResult.winnerId,
+            },
+            id: 0,
+          });
+          const winners = convertGameResultToWinnersTable(
+            this.stateManager.appState.users,
+            this.stateManager.appState.gameResults,
+          );
+          notifyFn({
+            type: 'update_winners',
+            data: winners,
+            id: 0,
+          });
+        });
+
+        watchPlayersMoves(
+          this.stateManager,
+          game.id,
+          (game, point, attacker) => {
+            const otherPlayer = getEnemy(game, attacker);
+            const evt = shotToEvent(game, otherPlayer, attacker, point);
+            evt.forEach((el) => notifyFn(el));
+          },
+        );
+
+        // delete
+        //after eash shot - turn, even if current the same
+        watchGameTurn(this.stateManager, game.id, () => {
           const currentPlayer = getCurrentPlayer(this.stateManager, game);
           if (currentPlayer != null) {
-            notifyFn({
-              type: 'start_game',
-              data: {
-                ships: game.players[currentPlayer].ships!,
-                currentIndexPlayer: currentPlayer,
-              },
-              id: 0,
-            });
             notifyFn({
               type: 'turn',
               data: {
@@ -108,50 +150,8 @@ export class GameEngine {
               id: 0,
             });
           }
-          watchGameEnd(this.stateManager, game.id, (gameResult) => {
-            notifyFn({
-              type: 'finish',
-              data: {
-                winPlayer: gameResult.winnerId,
-              },
-              id: 0,
-            });
-            const winners = convertGameResultToWinnersTable(this.stateManager.appState.users, this.stateManager.appState.gameResults);
-            notifyFn({
-              type: "update_winners",
-              data: winners,
-              id: 0,
-            });
-          });
-
-          eventForGameStartedUnsub();
-
-          watchPlayersMoves(
-            this.stateManager,
-            game.id,
-            (game, point, attacker) => {
-              const otherPlayer = getEnemy(game, attacker);
-              const evt = shotToEvent(game, otherPlayer, attacker, point);
-              evt.forEach((el) => notifyFn(el));
-            },
-          );
-
-          // delete
-          //after eash shot - turn, even if current the same
-          watchGameTurn(this.stateManager, game.id, () => {
-            const currentPlayer = getCurrentPlayer(this.stateManager, game);
-            if (currentPlayer != null) {
-              notifyFn({
-                type: 'turn',
-                data: {
-                  currentPlayer: currentPlayer,
-                },
-                id: 0,
-              });
-            }
-          });
-        },
-      );
+        });
+      });
     });
     return {
       callback: (dataObj) => {
@@ -282,12 +282,11 @@ function waitForUserJoinedGame(
     if (state.games === oldState.games) {
       return;
     }
+    const old = Object.values(oldState.games).find((el) => el.players[userId]);
     const game = Object.values(state.games).find((el) => el.players[userId]);
-    if (!game) {
-      return;
+    if (!old && game) {
+      callback(game);
     }
-    unsub();
-    callback(game);
   });
   return unsub;
 }
@@ -297,18 +296,25 @@ function watchStartedGame(
   gameId: GameId,
   callback: (game: Game, oldGame: Game) => void,
 ) {
-  return stateManager.subscribe((event, state, oldState) => {
+  const unsub = stateManager.subscribe((event, state, oldState) => {
     if (state.games === oldState.games) {
       return;
     }
-    if (state.games[gameId] == oldState.games[gameId]) {
+    if (!state.games[gameId]) {
+      unsub();
       return;
     }
+
+    if (state.games[gameId] === oldState.games[gameId]) {
+      return;
+    }
+
     const game = state.games[gameId];
     if (game.gameState) {
       callback(game, oldState.games[gameId]);
     }
   });
+  return unsub;
 }
 
 function watchGameEnd(
