@@ -45,6 +45,13 @@ export interface Attacked {
   y: number;
 }
 
+export interface GameFinished {
+  type: 'finished';
+  gameId: number;
+  winnerId: number;
+  looserId: number;
+}
+
 export type AppEvent =
   | RoomCreated
   | UserRegistered
@@ -52,5 +59,6 @@ export type AppEvent =
   | RoomUpdated
   | ShipsAdded
   | Attacked
-  | Turn;
+  | Turn
+  | GameFinished;
 export type AppEventType = AppEvent['type'];

@@ -162,10 +162,23 @@ const attacked = createEventHandler('attacked', (event, state) => {
     if (attackResult.type === 'hit' || attackResult.type === 'kill') {
       nextState.gameState!.currentPlayer = event.playerId;
     }
-    /////////// curent winner enemy loser
-    //// from game list room shoild be deleted and shoul be added to list game results
-    if (attackResult.type === 'game_over') {
 
+    if (attackResult.type === 'game_over') {
+      const winner = state.games[event.gameId].gameState?.currentPlayer!;
+      const looser = getEnemy(game, winner);
+      const result: AppState = {
+        ...state,
+        gameResults: {
+          ...state.gameResults,
+          [event.gameId]: {
+            gameId: event.gameId,
+            winnerId: winner,
+            looserId: looser,
+          },
+        },
+      };
+      delete result.games[event.gameId];
+      return result;
     }
     return {
       ...state,

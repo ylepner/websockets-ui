@@ -1,4 +1,4 @@
-import { AttackRequest, AttackResponse, RandomAttackRequest } from './game-messages';
+import { AttackRequest, AttackResponse, Finish, RandomAttackRequest } from './game-messages';
 
 export interface RegisterRequest {
   type: 'reg';
@@ -120,4 +120,5 @@ export type EventResponse =
   | StartGameResponse
   | TurnResponse
   | UpdateRoomEvent
-  | AttackResponse;
+  | AttackResponse
+  | Finish;

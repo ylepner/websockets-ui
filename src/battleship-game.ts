@@ -111,6 +111,10 @@ export class BattleshipGame {
     if (this.checkShipCollision(position)) {
       for (const ship of this.ships) {
         const status = this.updateShipStatus(ship, position);
+        if (this.remainingShips === 0) {
+          console.log('GAME_OVER')
+          return { type: 'game_over' };
+        }
         if (status.type === 'hit' || status.type === 'kill') {
           this.hits.add(positionKey);
           return status;
@@ -120,7 +124,7 @@ export class BattleshipGame {
       this.hits.add(positionKey);
     }
 
-    return this.remainingShips === 0 ? { type: 'game_over' } : { type: 'miss' };
+    return { type: 'miss' };
   }
 
   public getRandomEmptyPosition(): Position | null {

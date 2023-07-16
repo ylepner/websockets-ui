@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { type } from 'os';
-import { AppState, Game, GameId, UserId } from './app.state';
+import { AppState, Game, GameId, GameResult, UserId } from './app.state';
 import {
   attackShip,
   getEnemy,
@@ -84,7 +84,6 @@ export class GameEngine {
             notifyFn({
               type: 'start_game',
               data: {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 ships: game.players[currentPlayer].ships!,
                 currentIndexPlayer: currentPlayer,
               },
@@ -98,6 +97,15 @@ export class GameEngine {
               id: 0,
             });
           }
+          watchGameEnd(this.stateManager, game.id, (gameResult) => {
+            notifyFn({
+              type: 'finish',
+              data: {
+                winPlayer: gameResult.winnerId,
+              },
+              id: 0,
+            });
+          });
 
           eventForGameStartedUnsub();
 
@@ -182,6 +190,18 @@ export class GameEngine {
             });
           }
         }
+        // if (dataObj.type === 'finish') {
+        //   const winner =
+        //     this.stateManager.appState.gameResults[gameId].winnerId;
+        //   const looser =
+        //     this.stateManager.appState.gameResults[gameId].looserId;
+        //   this.stateManager.publishEvent({
+        //     type: 'finished',
+        //     gameId: gameId,
+        //     winnerId: winner,
+        //     looserId: looser,
+        //   });
+        // }
       },
       userId: userId,
     };
@@ -286,8 +306,16 @@ function watchStartedGame(
   });
 }
 
-function watchGameEnd(stateManager: StateManager, gameId: GameId, callback: () => void) {
-  //появился гейм резвлт с айдишниеом игру, удалить игру из списка игр и добавить в список рещультатов
+function watchGameEnd(
+  stateManager: StateManager,
+  gameId: GameId,
+  callback: (gameResult: GameResult) => void,
+) {
+  return stateManager.subscribe((event, state, oldState) => {
+    if (!oldState.gameResults[gameId] && state.gameResults[gameId]) {
+      callback(state.gameResults[gameId]);
+    }
+  });
 }
 
 function watchPlayersMoves(
@@ -317,7 +345,7 @@ function watchGameTurn(
   callback: (playerId: UserId) => void,
 ) {
   return watchStartedGame(stateManager, gameId, (game, oldGame) => {
-    if (oldGame.gameState?.currentPlayer !== game.gameState?.currentPlayer) {
+    if (game.gameState?.currentPlayer) {
       callback(game.gameState?.currentPlayer!);
     }
   });

@@ -11,6 +11,7 @@ export class StateManager {
     rooms: [],
     users: [],
     games: {},
+    gameResults: {},
   };
 
   private subscribers: Array<
