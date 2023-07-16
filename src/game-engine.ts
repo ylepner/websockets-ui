@@ -31,20 +31,27 @@ export class GameEngine {
       callback: (event: InputMessage) => void;
     }
     | undefined {
-    // сделать тут валидацию.
-    // если имя и пароль совпадают то взять userId из stateManager
-    // publishEvent('user_registered') делать не нужно тогда
+    let userId: number;
+    const user = this.stateManager.appState.users.find(
+      (el) => el.name === request.data.name,
+    );
+    if (user) {
+      if (user.password === request.data.password) {
+        userId = user.id;
+      } else {
+        console.log('Wrong password');
+        return undefined;
+      }
+    } else {
+      userId = this.userCounter++;
+      this.stateManager.publishEvent({
+        type: 'user_registered',
+        id: userId,
+        name: request.data.name,
+        password: request.data.password,
+      });
+    }
 
-    // если пароль не совпадает, то вернуть undefined
-
-    const userId = this.userCounter++;
-    this.stateManager.publishEvent({
-      type: 'user_registered',
-      id: userId,
-      name: request.data.name,
-      password: request.data.password,
-    });
-    // проверить если юзер появился
     const registerResponse: RegisterResponse = {
       type: 'reg',
       data: {

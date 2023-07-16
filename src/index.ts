@@ -43,7 +43,6 @@ try {
     let info: Info | undefined;
     wsStream.on('data', (data: string) => {
       const dataObj: InputMessage = deserializeMessage(data);
-      console.log(`Data received: ${JSON.stringify(dataObj)}`);
       if (dataObj.type === 'reg') {
         info = gameEngine.regUser(dataObj, (data, userId) => {
           sendMessage(data, ws, userId);
