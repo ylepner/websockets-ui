@@ -146,23 +146,18 @@ export class GameEngine {
             const otherPlayer = getEnemy(game, attacker);
             const evt = shotToEvent(game, otherPlayer, attacker, point);
             evt.forEach((el) => notifyFn(el));
+            const currentPlayer = getCurrentPlayer(this.stateManager, game);
+            if (currentPlayer != null) {
+              notifyFn({
+                type: 'turn',
+                data: {
+                  currentPlayer: currentPlayer,
+                },
+                id: 0,
+              });
+            }
           },
         );
-
-        // delete
-        //after eash shot - turn, even if current the same
-        watchGameTurn(this.stateManager, game.id, () => {
-          const currentPlayer = getCurrentPlayer(this.stateManager, game);
-          if (currentPlayer != null) {
-            notifyFn({
-              type: 'turn',
-              data: {
-                currentPlayer: currentPlayer,
-              },
-              id: 0,
-            });
-          }
-        });
       });
     });
     return {

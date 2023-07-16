@@ -41,7 +41,6 @@ const roomCreatedHandler = createEventHandler(
 const userRegisteredHandler = createEventHandler(
   'user_registered',
   (event, state) => {
-    // if user is already in db
     const user = state.users.find((el) => el.name === event.name);
     if (user) {
       if (user.password != event.password) {
