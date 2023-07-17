@@ -253,13 +253,24 @@ function shotToEvent(
   ];
 
   if (shotStatus.type == 'kill') {
-    for (let i = 0; i < shotStatus.data.length; i++) {
+    for (let i = 0; i < shotStatus.data.around.length; i++) {
       events.push({
         type: 'attack',
         data: {
-          position: shotStatus.data[i],
+          position: shotStatus.data.around[i],
           currentPlayer: attacker,
           status: turnResultToAttackStatus({ type: 'miss' }),
+        },
+        id: 0,
+      });
+    }
+    for (let i = 0; i < shotStatus.data.shipPoints.length; i++) {
+      events.push({
+        type: 'attack',
+        data: {
+          position: shotStatus.data.shipPoints[i],
+          currentPlayer: attacker,
+          status: turnResultToAttackStatus({ type: 'kill', data: { around: shotStatus.data.around, shipPoints: shotStatus.data.shipPoints } }),
         },
         id: 0,
       });

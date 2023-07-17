@@ -5,7 +5,7 @@ interface Position {
   y: number;
 }
 
-interface GameShip {
+export interface GameShip {
   position: Position;
   direction: boolean;
   type: string;
@@ -16,7 +16,7 @@ interface GameShip {
 export type GameStatus =
   | { type: 'miss' }
   | { type: 'hit' }
-  | { type: 'kill'; data: Position[] }
+  | { type: 'kill'; data: { around: Position[]; shipPoints: Position[] } }
   | { type: 'game_over' }
   | { type: 'invalid_move' };
 
@@ -61,20 +61,22 @@ export class BattleshipGame {
   }
   private updateShipStatus(ship: GameShip, position: Position): GameStatus {
     const { x, y } = ship.position;
-    const { length, direction, hits } = ship;
+    const { length, direction } = ship;
 
     if (direction) {
       for (let i = 0; i < length; i++) {
         if (x + i === position.x && y === position.y) {
           ship.hits++;
-
           if (ship.hits === length) {
             this.remainingShips--;
-            const sunkPoints: Position[] = [];
             const around = Array.from(
               pointsAround(ship, this.boardSize),
             ).filter((x) => !this.hits.has(`${x.x},${x.y}`));
-            return { type: 'kill', data: around };
+            const shipPoints = getShipPoints(ship);
+            return {
+              type: 'kill',
+              data: { around: around, shipPoints: shipPoints },
+            };
           }
 
           return { type: 'hit' };
@@ -84,13 +86,16 @@ export class BattleshipGame {
       for (let i = 0; i < length; i++) {
         if (x === position.x && y + i === position.y) {
           ship.hits++;
-
           if (ship.hits === length) {
             this.remainingShips--;
             const around = Array.from(
               pointsAround(ship, this.boardSize),
             ).filter((x) => !this.hits.has(`${x.x},${x.y}`));
-            return { type: 'kill', data: around };
+            const shipPoints = getShipPoints(ship);
+            return {
+              type: 'kill',
+              data: { around: around, shipPoints: shipPoints },
+            };
           }
 
           return { type: 'hit' };
@@ -112,7 +117,6 @@ export class BattleshipGame {
       for (const ship of this.ships) {
         const status = this.updateShipStatus(ship, position);
         if (this.remainingShips === 0) {
-          console.log('GAME_OVER')
           return { type: 'game_over' };
         }
         if (status.type === 'hit' || status.type === 'kill') {
@@ -178,4 +182,24 @@ export function* pointsAround(ship: GameShip, boardSize: number) {
         };
     }
   }
+}
+
+export function getShipPoints(ship: GameShip) {
+  const startPoint = { x: ship.position.x, y: ship.position.y };
+  const coord: Position[] = [];
+  for (let i = 0; i < ship.length - 1; i++) {
+    if (ship.direction) {
+      coord.push({
+        x: (startPoint.x += i),
+        y: startPoint.y,
+      });
+    } else {
+      coord.push({
+        x: startPoint.x,
+        y: (startPoint.y += 1),
+      });
+    }
+  }
+  coord.unshift(ship.position);
+  return coord;
 }

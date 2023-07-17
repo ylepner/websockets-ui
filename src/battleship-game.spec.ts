@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { pointsAround } from './battleship-game';
+import { GameShip, getShipPoints, pointsAround } from './battleship-game';
+import { Ship } from './messages/messages';
 
 describe('points around function', () => {
   it('should return points around horizontal ship', () => {
@@ -52,6 +53,37 @@ describe('points around function', () => {
       9,
     );
     const arr = Array.from(result);
+  });
+});
 
-  })
+it('should return points of a ship', () => {
+  const ships: GameShip[] = [
+    {
+      position: { x: 2, y: 1 },
+      direction: false,
+      type: 'large',
+      length: 3,
+      hits: 3,
+    },
+    {
+      position: { x: 0, y: 0 },
+      direction: true,
+      type: 'large',
+      length: 3,
+      hits: 3,
+    },
+    {
+      position: { x: 1, y: 4 },
+      direction: true,
+      type: 'medium',
+      length: 2,
+      hits: 2,
+    },
+  ];
+  const result = getShipPoints(ships[0]);
+  expect(result).to.be.deep.eq([
+    { x: 2, y: 1 },
+    { x: 2, y: 2 },
+    { x: 2, y: 3 },
+  ]);
 });

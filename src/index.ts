@@ -86,7 +86,6 @@ function sendMessage<T extends { data: any; type: string }>(
   ws: WebSocket,
   userId?: number,
 ) {
-  console.log(`Sending message userId: ${userId}`, msg);
   ws.send(serializeMessage(msg));
 }
 
