@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { GameShip, getShipPoints, pointsAround } from './battleship-game';
-import { Ship } from './messages/messages';
 
 describe('points around function', () => {
   it('should return points around horizontal ship', () => {
@@ -52,6 +51,7 @@ describe('points around function', () => {
       },
       9,
     );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const arr = Array.from(result);
   });
 });

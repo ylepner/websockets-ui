@@ -1,4 +1,3 @@
-import { validate } from 'uuid';
 import { AppState, Game } from './app.state';
 import { FindByType, attackShip, getEnemy } from './common';
 import { AppEvent, AppEventType } from './events';
@@ -6,6 +5,7 @@ import { AppEvent, AppEventType } from './events';
 type EventOf<T extends AppEventType> = FindByType<AppEvent, T>;
 
 export class ValidationError {
+  // eslint-disable-next-line prettier/prettier
   constructor(public readonly reason: string) { }
 }
 

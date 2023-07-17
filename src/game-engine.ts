@@ -14,23 +14,21 @@ import {
   RegisterResponse,
   UpdateRoomEvent,
 } from './messages/messages';
+import { UserRegMessage } from './models';
 import { StateManager } from './state-manager';
 export type UserNotifyFunction = (data: EventResponse, userId: UserId) => void;
+
 export class GameEngine {
   private readonly stateManager = new StateManager();
   private userCounter = 0;
 
+  // eslint-disable-next-line prettier/prettier, @typescript-eslint/no-empty-function
   constructor() { }
 
   regUser(
     request: RegisterRequest,
     userNotifyFunction: UserNotifyFunction,
-  ):
-    | {
-      userId: number;
-      callback: (event: InputMessage) => void;
-    }
-    | undefined {
+  ): UserRegMessage | undefined {
     let userId: number;
     const user = this.stateManager.appState.users.find(
       (el) => el.name === request.data.name,
@@ -270,7 +268,13 @@ function shotToEvent(
         data: {
           position: shotStatus.data.shipPoints[i],
           currentPlayer: attacker,
-          status: turnResultToAttackStatus({ type: 'kill', data: { around: shotStatus.data.around, shipPoints: shotStatus.data.shipPoints } }),
+          status: turnResultToAttackStatus({
+            type: 'kill',
+            data: {
+              around: shotStatus.data.around,
+              shipPoints: shotStatus.data.shipPoints,
+            },
+          }),
         },
         id: 0,
       });

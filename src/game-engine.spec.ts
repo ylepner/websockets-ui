@@ -6,8 +6,6 @@ import {
   UpdateRoomEvent,
 } from './messages/messages';
 import { UserId } from './app.state';
-import { connect } from 'http2';
-import { resourceUsage } from 'process';
 
 const messages: any[] = [
   {

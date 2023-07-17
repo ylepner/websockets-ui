@@ -45,4 +45,3 @@ describe('Convert game results to winner table', () => {
     ]);
   });
 });
-
